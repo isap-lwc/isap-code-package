@@ -1,10 +1,12 @@
-# Usage Instructions
-
-## Building Code
+### Building Code
 
     make all
 
-## Executing Code
+### Executing Code
 
     ./genkat
     diff LWC_AEAD_KAT_128_128.txt LWC_AEAD_KAT_128_128_REFERENCE.txt
+
+### Implementation By:
+
+* Robert Primas

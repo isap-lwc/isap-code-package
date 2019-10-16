@@ -1,18 +1,19 @@
-# Usage Instructions
-
-## Configuring Code
+### Configuring Code
 
 * Enable/disable debug mode -> see CMakeLists.txt
 * Choose ISAP instance -> see CMakeLists.txt
 
-## Building Code
+### Building Code
 
     mkdir build
     cd build
     cmake ..
     make
 
-## Executing Code
+### Executing Code
 
     ./genkat_aead
 
+### Implementation By:
+
+* Robert Primas
