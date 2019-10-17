@@ -27,25 +27,6 @@ static const UINT16 KeccakF400RoundConstants[20] = {
 
 #define ROL16(a, offset) ((((UINT16)a) << offset) ^ (((UINT16)a) >> (16-offset)))
 
-#define declareABCDE \
-    UINT16 Aba, Abe, Abi, Abo, Abu; \
-    UINT16 Aga, Age, Agi, Ago, Agu; \
-    UINT16 Aka, Ake, Aki, Ako, Aku; \
-    UINT16 Ama, Ame, Ami, Amo, Amu; \
-    UINT16 Asa, Ase, Asi, Aso, Asu; \
-    UINT16 Bba, Bbe, Bbi, Bbo, Bbu; \
-    UINT16 Bga, Bge, Bgi, Bgo, Bgu; \
-    UINT16 Bka, Bke, Bki, Bko, Bku; \
-    UINT16 Bma, Bme, Bmi, Bmo, Bmu; \
-    UINT16 Bsa, Bse, Bsi, Bso, Bsu; \
-    UINT16 Ca, Ce, Ci, Co, Cu; \
-    UINT16 Da, De, Di, Do, Du; \
-    UINT16 Eba, Ebe, Ebi, Ebo, Ebu; \
-    UINT16 Ega, Ege, Egi, Ego, Egu; \
-    UINT16 Eka, Eke, Eki, Eko, Eku; \
-    UINT16 Ema, Eme, Emi, Emo, Emu; \
-    UINT16 Esa, Ese, Esi, Eso, Esu; \
-
 #define declareABCDEX \
     union State S; \
     UINT16 Bba, Bbe, Bbi, Bbo, Bbu; \
@@ -60,13 +41,6 @@ static const UINT16 KeccakF400RoundConstants[20] = {
     UINT16 Eka, Eke, Eki, Eko, Eku; \
     UINT16 Ema, Eme, Emi, Emo, Emu; \
     UINT16 Esa, Ese, Esi, Eso, Esu; \
-
-#define prepareTheta \
-    Ca = Aba^Aga^Aka^Ama^Asa; \
-    Ce = Abe^Age^Ake^Ame^Ase; \
-    Ci = Abi^Agi^Aki^Ami^Asi; \
-    Co = Abo^Ago^Ako^Amo^Aso; \
-    Cu = Abu^Agu^Aku^Amu^Asu; \
 
 #define prepareThetaX \
     Ca = S.X.Aba^S.X.Aga^S.X.Aka^S.X.Ama^S.X.Asa; \

@@ -48,11 +48,6 @@ union State {
     } X;
 };
 
-#define PermuteRoundsB rounds1
-#define PermuteRoundsE rounds8
-#define PermuteRoundsH rounds16
-#define PermuteRoundsK rounds8
-
 #define PermuteRoundsBX rounds1X
 #define PermuteRoundsEX rounds8X
 #define PermuteRoundsHX rounds16X
