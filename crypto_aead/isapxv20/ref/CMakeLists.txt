@@ -42,5 +42,4 @@ set_target_properties(CRYPTO_AEAD PROPERTIES OUTPUT_NAME "isap")
 
 add_executable(EXE_GENKAT_AEAD genkat_aead.c)
 target_link_libraries(EXE_GENKAT_AEAD CRYPTO_AEAD)
-set_target_properties(EXE_GENKAT_AEAD PROPERTIES OUTPUT_NAME "genkat" SUFFIX "")
-
+set_target_properties(EXE_GENKAT_AEAD PROPERTIES OUTPUT_NAME "genkat_aead" SUFFIX "")

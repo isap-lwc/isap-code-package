@@ -1,0 +1,171 @@
+/*
+Implementation by the Keccak Team, namely, Guido Bertoni, Joan Daemen,
+Michaël Peeters, Gilles Van Assche and Ronny Van Keer,
+hereby denoted as "the implementer".
+
+For more information, feedback or questions, please refer to our website:
+https://keccak.team/
+
+To the extent possible under law, the implementer has waived all copyright
+and related or neighboring rights to the source code in this file.
+http://creativecommons.org/publicdomain/zero/1.0/
+*/
+
+#define rounds20 \
+    prepareTheta \
+    thetaRhoPiChiIotaPrepareTheta( 0, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 1, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 2, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 3, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 4, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(10, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(12, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(14, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(16, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(18, A, E) \
+    thetaRhoPiChiIota(19, E, A) \
+
+#define rounds20X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 0, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 1, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 2, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 3, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 4, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds16 \
+    prepareTheta \
+    thetaRhoPiChiIotaPrepareTheta( 4, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(10, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(12, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(14, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(16, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(18, A, E) \
+    thetaRhoPiChiIota(19, E, A) \
+
+#define rounds16X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 4, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds12 \
+    prepareTheta \
+    thetaRhoPiChiIotaPrepareTheta( 8, A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(10, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(12, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(14, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(16, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(18, A, E) \
+    thetaRhoPiChiIota(19, E, A) \
+
+#define rounds12X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds8 \
+    prepareTheta \
+    thetaRhoPiChiIotaPrepareTheta(12, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(14, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(16, A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, A) \
+    thetaRhoPiChiIotaPrepareTheta(18, A, E) \
+    thetaRhoPiChiIota(19, E, A) \
+
+#define rounds8X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds1 \
+    prepareTheta \
+    thetaRhoPiChiIotaPrepareTheta(19, A, E) \
+    copyStateVariables(A, E) \
+
+#define rounds1X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta(19, S.X.A, E) \
+    copyStateVariables(S.X.A, E) \
+
+#define roundsN(__nrounds) \
+    prepareTheta \
+    i = 20 - (__nrounds); \
+    if ((i&1) != 0) { \
+        thetaRhoPiChiIotaPrepareTheta(i, A, E) \
+        copyStateVariables(A, E) \
+        ++i; \
+    } \
+    for( /* empty */; i<20; i+=2) { \
+        thetaRhoPiChiIotaPrepareTheta(i  , A, E) \
+        thetaRhoPiChiIotaPrepareTheta(i+1, E, A) \
+    }
