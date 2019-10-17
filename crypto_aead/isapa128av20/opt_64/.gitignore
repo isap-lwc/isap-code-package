@@ -1,0 +1,3 @@
+build/
+tests/
+LWC_AEAD_KAT_128_128.txt

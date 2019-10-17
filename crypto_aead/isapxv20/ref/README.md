@@ -14,22 +14,21 @@
 
     ./genkat_aead
 
-then:
+### External Sources:
 
-    diff LWC_AEAD_KAT_128_128.txt ../kat/isapk128/LWC_AEAD_KAT_128_128.txt
+* KeccakP-400-SnP.h, KeccakP-400-reference.c:
+  * From: [eXtended Keccak Code Package](https://github.com/XKCP/XKCP/tree/master/lib/low/KeccakP-400/Reference)
+  * Copyright: See file header
 
-or:
+* brg_endian.h:
+  * From: [eXtended Keccak Code Package](https://github.com/XKCP/XKCP/tree/master/lib/common)
+  * Copyright: See file header
 
-    diff LWC_AEAD_KAT_128_128.txt ../kat/isapk128a/LWC_AEAD_KAT_128_128.txt
-
-or:
-
-    diff LWC_AEAD_KAT_128_128.txt ../kat/isapa128/LWC_AEAD_KAT_128_128.txt
-
-or:
-
-    diff LWC_AEAD_KAT_128_128.txt ../kat/isapa128a/LWC_AEAD_KAT_128_128.txt
+* Ascon-reference.h, Ascon-reference.c:
+  * From: [Ascon Software Repository](https://github.com/ascon/crypto_aead/archive/master.zip)
+  * Copyright: See zip folder
 
 ### Implementation By:
 
 * [Robert Primas](https://rprimas.github.io)
+
