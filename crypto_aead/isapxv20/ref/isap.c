@@ -8,9 +8,9 @@ const unsigned char ISAP_IV_A[] = {0x01,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,I
 const unsigned char ISAP_IV_KA[] = {0x02,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_sK};
 const unsigned char ISAP_IV_KE[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_sK};
 
-/****************************************/
-/*               IsapRk                 */
-/****************************************/
+/******************************************************************************/
+/*                                   IsapRk                                   */
+/******************************************************************************/
 
 void isap_rk(
 	const unsigned char *k,
@@ -43,9 +43,9 @@ void isap_rk(
 	Permutation_ExtractBytes(state,out,0,outlen);
 }
 
-/****************************************/
-/*               IsapMac                */
-/****************************************/
+/******************************************************************************/
+/*                                  IsapMac                                   */
+/******************************************************************************/
 
 void isap_mac(
 	const unsigned char *k,
@@ -83,7 +83,7 @@ void isap_mac(
 	Permutation_AddBytes(state,&pad,ISAP_rH_SZ-rate_bytes_avail,1);
 	Permutation_Permute_Nrounds(state,ISAP_sH);
 
-	// Domain Seperation ##\n");
+	// Domain Seperation: 0x01
 	unsigned char dom_sep = 0x01;
 	Permutation_AddBytes(state,&dom_sep,ISAP_STATE_SZ-1,1);
 
@@ -117,9 +117,9 @@ void isap_mac(
 	Permutation_ExtractBytes(state,tag,0,CRYPTO_KEYBYTES);
 }
 
-/****************************************/
-/*               IsapEnc                */
-/****************************************/
+/******************************************************************************/
+/*                                  IsapEnc                                   */
+/******************************************************************************/
 
 void isap_enc(
 	const unsigned char *k,

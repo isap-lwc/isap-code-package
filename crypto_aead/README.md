@@ -11,3 +11,9 @@
 * **isapxv20**
   * A common codebase that can be used to build all four instances of ISAP.
 
+### Sanity Check:
+
+Build all variants of ISAP and check KATs:
+
+    bash sanity_check.sh
+
