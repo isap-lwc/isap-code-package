@@ -1,5 +1,3 @@
-#ifndef ISAP_CRYPTO_AEAD
-#define ISAP_CRYPTO_AEAD
 
 int crypto_aead_encrypt(
 	unsigned char *c, unsigned long long *clen,
@@ -18,5 +16,3 @@ int crypto_aead_decrypt(
 	const unsigned char *npub,
 	const unsigned char *k
 );
-
-#endif

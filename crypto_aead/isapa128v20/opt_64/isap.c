@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "api.h"
-#include "Isap.h"
+#include "isap.h"
 
 typedef unsigned char u8;
 typedef unsigned long long u64;
@@ -104,7 +104,7 @@ static const int R[5][2] = {
     {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}
 };
 
-#define ABSORB_LANES(src, len) ({ \
+#define ABSORB_MAC(src, len) ({ \
     u32 rem_bytes = len; \
     u64 *src64 = (u64 *)src; \
     u32 idx64 = 0; \
@@ -173,7 +173,7 @@ void isap_rk(
         size_t cur_bit_pos = 7-(i%8);
         u8 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
         x0 ^= ((u64)cur_bit) << 56;
-        P1;
+        P12;
     }
     u8 cur_bit = ((y[ylen-1]) & 0x01) << 7;
     x0 ^= ((u64)cur_bit) << 56;
@@ -213,13 +213,13 @@ void isap_mac(
     P12;
 
     // Absorb AD
-    ABSORB_LANES(ad,adlen);
+    ABSORB_MAC(ad,adlen);
 
     // Domain seperation
     x4 ^= 0x0000000000000001ULL;
 
     // Absorb C
-    ABSORB_LANES(c,clen);
+    ABSORB_MAC(c,clen);
 
     // Derive K*
     state64[0] = U64BIG(x0);
@@ -266,7 +266,7 @@ void isap_enc(
     x2 = U64BIG(state64[2]);
     x3 = U64BIG(npub64[0]);
     x4 = U64BIG(npub64[1]);
-    P6;
+    P12;
 
     // Squeeze key stream
     u64 rem_bytes = mlen;
@@ -278,7 +278,7 @@ void isap_enc(
             // Squeeze full lane
             c64[idx64] = U64BIG(x0) ^ m64[idx64];
             idx64++;
-            P6;
+            P12;
             rem_bytes -= ISAP_rH_SZ;
         } else if(rem_bytes==ISAP_rH_SZ){
             // Squeeze full lane and stop

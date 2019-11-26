@@ -27,7 +27,7 @@ add_definitions(-DDEBUG=0)
 ########################
 
 #set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2")
-set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wshadow -O3 -march=native")
+set(CMAKE_C_FLAGS "-march=native -O3 -DNDEBUG")
 
 add_library(
   CRYPTO_AEAD

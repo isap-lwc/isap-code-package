@@ -1,20 +1,6 @@
-### Building Code:
+### Building and Executing Code:
 
-    mkdir build
-    cd build
-    cmake ..
-    make
-
-### Executing Code:
-
-    ./genkat_aead
-    diff LWC_AEAD_KAT_128_128.txt ../LWC_AEAD_KAT_128_128_REF.txt
-
-### External Sources:
-
-* Ascon-reference.h, Ascon-reference.c:
-  * From: [Ascon Software Repository](https://github.com/ascon/crypto_aead/archive/master.zip)
-  * Copyright: See zip folder
+See `README.md` in the top folder.
 
 ### Implementation By:
 

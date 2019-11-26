@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "api.h"
-#include "Isap.h"
+#include "isap.h"
 #include "KeccakP-400-64.macros"
 #include "KeccakP-400-unrolling.macros"
 

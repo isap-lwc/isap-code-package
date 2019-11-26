@@ -1,5 +1,5 @@
 all:
-	gcc *.c -std=c99 -Wall -Wextra -Wshadow -O3 -march=native -o genkat_aead
+	gcc *.c -march=native -O3 -DNDEBUG  -o genkat_aead
 
 debug:
 	gcc *.c -std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2 -o genkat_aead
