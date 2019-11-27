@@ -5,15 +5,9 @@
 * **isapa128v20**
   * Code for ISAP128 using Ascon-p.
 * **isapk128av20**
-  * Code for ISAP128a using Keccak-p.
+  * Code for ISAP128a using Keccak-p[400].
 * **isapk128v20**
-  * Code for ISAP128 using Keccak-p.
+  * Code for ISAP128 using Keccak-p[400].
 * **isapxv20**
-  * A common codebase that can be used to build all four instances of ISAP.
-
-### Sanity Check:
-
-Build all variants of ISAP and check KATs:
-
-    bash sanity_check.sh
+  * A common codebase that can be used to build reference code for all four instances of ISAP.
 

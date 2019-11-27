@@ -16,7 +16,7 @@ and the following implementations:
 
 ## Performance results on different CPUs in cycles per byte:
 
-ISAP was especially designed for senarios where implementation security is required. As such, ISAP features, amongst others, build-in hardening/protection against implementation attacks such as Differential Power Analysis (DPA), Differential Fault Attacks (DFA), and Statistical Ineffetive Fault Attacks (SIFA).
+ISAP was especially designed for senarios where implementation security is required. It features, amongst others, **build-in hardening/protection against implementation attacks** such as Differential Power Analysis (DPA), Differential Fault Attacks (DFA), Statistical Fault Attacks (SFA), and Statistical Ineffetive Fault Attacks (SIFA).
 
 ### ISAP-A-128a (recommended)
 
