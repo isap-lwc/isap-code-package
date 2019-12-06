@@ -23,39 +23,41 @@ ISAP was especially designed for scenarios where implementation security is requ
 
 | Message Length in Bytes: |    64 |  1536 |  long |
 |:-------------------------|------:|------:|------:|
-| AMD Rzyen 7 1700 (x64)   |  85.7 |  24.5 |  21.9 |
+| AMD Ryzen 7 1700 (x64)   |  85.7 |  24.5 |  21.9 |
 | Intel i5-6200U (x64)     |   104 |  34.3 |  31.4 |
 | Raspberry Pi 1B (ARMv6m) |   966 |   190 |   161 |
-| STM32F0405 (ARMv7m)      |   |   |   |
+| STM32F0405 (ARMv7m)      |  1223 |   352 |   311 |
 
 ### ISAP-A-128
 
 | Message Length in Bytes: |    64 |  1536 |  long |
 |:-------------------------|------:|------:|------:|
-| AMD Rzyen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
+| AMD Ryzen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
 | Intel i5-6200U (x64)     |   698 |  68.1 |  42.0 |
 | Raspberry Pi 1B (ARMv6m) |  3771 |   347 |   211 |
-| STM32F0405 (ARMv7m)      |   |   |   |
+| STM32F0405 (ARMv7m)      |  6818 |   675 |   406 |
 
 ### ISAP-K-128a (recommended)
 
 | Message Length in Bytes: |    64 |  1536 |  long |
 |:-------------------------|------:|------:|------:|
-| AMD Rzyen 7 1700 (x64)   |   295 |  64.1 |  54.3 |
+| AMD Ryzen 7 1700 (x64)   |   295 |  64.1 |  54.3 |
 | Intel i5-6200U (x64)     |   342 |  72.8 |  61.3 |
 | Raspberry Pi 1B (ARMv6m) |  3464 |   743 |   635 |
-| STM32F0405 (ARMv7m)      |   |   |   |
+| STM32F0405 (ARMv7m)      |  4007 |   808 |   658 |
 
 ### ISAP-K-128
 
 | Message Length in Bytes: |    64 |  1536 |  long |
 |:-------------------------|------:|------:|------:|
-| AMD Rzyen 7 1700 (x64)   |  2108 |   156 |  75.0 |
+| AMD Ryzen 7 1700 (x64)   |  2108 |   156 |  75.0 |
 | Intel i5-6200U (x64)     |  2318 |   173 |  84.0 |
 | Raspberry Pi 1B (ARMv6m) | 23917 |  1790 |   878 |
-| STM32F0405 (ARMv7m)      |   |   |   |
+| STM32F0405 (ARMv7m)      | 25472 |  1909 |   869 |
 
 ## Run KATs:
+
+### x64
 
 * **ISAP-A-128a**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
@@ -65,6 +67,8 @@ ISAP was especially designed for scenarios where implementation security is requ
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 * **ISAP-K-128**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    
+### ARMv6/ARMv7
 
 * **ISAP-A-128a**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv6m crypto_aead/isapa128av20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
@@ -80,6 +84,8 @@ Then execute:
 
 ## Run Benchmarks:
 
+### x64
+
 * **ISAP-A-128a**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-A-128**
@@ -88,6 +94,8 @@ Then execute:
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-K-128**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    
+### ARMv6/ARMv7
 
 * **ISAP-A-128a**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv6m crypto_aead/isapa128av20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
