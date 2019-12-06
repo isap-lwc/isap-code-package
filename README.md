@@ -28,15 +28,6 @@ ISAP was especially designed for scenarios where implementation security is requ
 | Raspberry Pi 1B (ARMv6m) |   966 |   190 |   161 |
 | STM32F0405 (ARMv7m)      |  1223 |   352 |   311 |
 
-### ISAP-A-128
-
-| Message Length in Bytes: |    64 |  1536 |  long |
-|:-------------------------|------:|------:|------:|
-| AMD Ryzen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
-| Intel i5-6200U (x64)     |   698 |  68.1 |  42.0 |
-| Raspberry Pi 1B (ARMv6m) |  3771 |   347 |   211 |
-| STM32F0405 (ARMv7m)      |  6818 |   675 |   406 |
-
 ### ISAP-K-128a (recommended)
 
 | Message Length in Bytes: |    64 |  1536 |  long |
@@ -45,6 +36,15 @@ ISAP was especially designed for scenarios where implementation security is requ
 | Intel i5-6200U (x64)     |   342 |  72.8 |  61.3 |
 | Raspberry Pi 1B (ARMv6m) |  3464 |   743 |   635 |
 | STM32F0405 (ARMv7m)      |  4007 |   808 |   658 |
+
+### ISAP-A-128
+
+| Message Length in Bytes: |    64 |  1536 |  long |
+|:-------------------------|------:|------:|------:|
+| AMD Ryzen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
+| Intel i5-6200U (x64)     |   698 |  68.1 |  42.0 |
+| Raspberry Pi 1B (ARMv6m) |  3771 |   347 |   211 |
+| STM32F0405 (ARMv7m)      |  6818 |   675 |   406 |
 
 ### ISAP-K-128
 
@@ -71,13 +71,13 @@ ISAP was especially designed for scenarios where implementation security is requ
 ### ARMv6/ARMv7
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv6m crypto_aead/isapa128av20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv6m crypto_aead/isapa128v20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv6m crypto_aead/isapk128av20/opt_32_armv6m/*.c crypto_aead/isapk128av20/opt_32_armv6m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv6m crypto_aead/isapk128v20/opt_32_armv6m/*.c crypto_aead/isapk128v20/opt_32_armv6m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 
 Then execute:
     ./genkat
@@ -98,13 +98,13 @@ Then execute:
 ### ARMv6/ARMv7
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv6m crypto_aead/isapa128av20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv6m crypto_aead/isapa128v20/opt_32_armv6m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv6m crypto_aead/isapk128av20/opt_32_armv6m/*.c crypto_aead/isapk128av20/opt_32_armv6m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv6m crypto_aead/isapk128v20/opt_32_armv6m/*.c crypto_aead/isapk128v20/opt_32_armv6m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 
 Then execute:
     ./getcycles
