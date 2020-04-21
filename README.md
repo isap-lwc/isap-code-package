@@ -63,24 +63,24 @@ First, compile code for the desired architecture. Then execute: `./genkat`
 ### x64
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_64 crypto_aead/isapa128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_64 crypto_aead/isapa128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
     
 ### ARMv6/ARMv7
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 
 ## Run Benchmarks:
 
@@ -89,24 +89,24 @@ First, compile code for the desired architecture. Then execute: `./getcycles`
 ### x64
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_64 crypto_aead/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_64 crypto_aead/isapa128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_64 crypto_aead/isapa128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_64 crypto_aead/isapk128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_64 crypto_aead/isapk128v20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
     
 ### ARMv6/ARMv7
 
 * **ISAP-A-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128av20/opt_32_armv67m crypto_aead/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-A-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128a**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128**
-    gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 
 ## License Information:
 
