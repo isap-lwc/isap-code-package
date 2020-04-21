@@ -13,6 +13,7 @@ and the following implementations:
 
 - `ref`: reference implementation
 - `opt_64`: 64-bit optimized C implementation
+- `opt_32`: 32-bit optimized C implementation
 - `opt_32_armv67`: 32-bit optimized C/ASM implementation for ARMv6 and ARMv7
 
 ## Performance results on different CPUs in cycles per byte:
@@ -57,6 +58,8 @@ ISAP was especially designed for scenarios where implementation security is requ
 
 ## Run KATs:
 
+First, compile code for the desired architecture. Then execute: `./genkat`
+
 ### x64
 
 * **ISAP-A-128a**
@@ -79,10 +82,9 @@ ISAP was especially designed for scenarios where implementation security is requ
 * **ISAP-K-128**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 
-Then execute:
-    ./genkat
-
 ## Run Benchmarks:
+
+First, compile code for the desired architecture. Then execute: `./getcycles`
 
 ### x64
 
@@ -105,9 +107,6 @@ Then execute:
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 * **ISAP-K-128**
     gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
-
-Then execute:
-    ./getcycles
 
 ## License Information:
 
