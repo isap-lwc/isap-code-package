@@ -26,7 +26,7 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |  85.7 |  24.5 |  21.9 |
 | Intel i5-6200U (x64)     |   104 |  34.3 |  31.4 |
-| Raspberry Pi 1B (ARMv6m) |   966 |   190 |   161 |
+| Raspberry Pi 1B (ARMv6m) |   551 |   171 |   159 |
 | STM32F0405 (ARMv7m)      |  1223 |   352 |   311 |
 
 ### ISAP-K-128a (recommended)
@@ -44,7 +44,7 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
 | Intel i5-6200U (x64)     |   698 |  68.1 |  42.0 |
-| Raspberry Pi 1B (ARMv6m) |  3771 |   347 |   211 |
+| Raspberry Pi 1B (ARMv6m) |  3209 |   324 |   212 |
 | STM32F0405 (ARMv7m)      |  6818 |   675 |   406 |
 
 ### ISAP-K-128
