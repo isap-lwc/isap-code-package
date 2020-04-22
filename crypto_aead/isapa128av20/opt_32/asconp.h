@@ -2,7 +2,7 @@
 #define ASCONP_H_
 
 typedef unsigned char u8;
-typedef unsigned int u32;
+typedef unsigned long u32;
 typedef unsigned long long u64;
 
 typedef struct
@@ -15,9 +15,7 @@ typedef struct
 u32 rc_o[12] = {0xc, 0xc, 0x9, 0x9, 0xc, 0xc, 0x9, 0x9, 0x6, 0x6, 0x3, 0x3};
 u32 rc_e[12] = {0xc, 0x9, 0xc, 0x9, 0x6, 0x3, 0x6, 0x3, 0xc, 0x9, 0xc, 0x9};
 
-#define EXT_BYTE64(x, n) ((u8)((u64)(x) >> (8 * (7 - (n)))))
-#define INS_BYTE64(x, n) ((u64)(x) << (8 * (7 - (n))))
-#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
+/* ---------------------------------------------------------------- */
 
 u64 U64BIG(u64 x)
 {
@@ -26,6 +24,8 @@ u64 U64BIG(u64 x)
             (((x)&0x000000FF00000000ULL) >> 8) | (((x)&0x0000FF0000000000ULL) >> 24) |
             (((x)&0x00FF000000000000ULL) >> 40) | (((x)&0xFF00000000000000ULL) >> 56));
 }
+
+/* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
 void to_bit_interleaving(u32_2 *out, u64 in)
@@ -45,6 +45,8 @@ void to_bit_interleaving(u32_2 *out, u64 in)
     (*out).o = (lo >> 16) | (hi & 0xFFFF0000);
 }
 
+/* ---------------------------------------------------------------- */
+
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
 void from_bit_interleaving(u64 *out, u32_2 in)
 {
@@ -62,68 +64,166 @@ void from_bit_interleaving(u64 *out, u32_2 in)
     *out = (u64)hi << 32 | lo;
 }
 
-#define PERMUTE(rounds)                    \
-    for (u32 r = 12 - rounds; r < 12; r++) \
-    {                                      \
-        /* round constant */               \
-        x2.e ^= rc_e[r];                   \
-        x2.o ^= rc_o[r];                   \
-        /* s-box layer */                  \
-        x0.e ^= x4.e;                      \
-        x0.o ^= x4.o;                      \
-        x4.e ^= x3.e;                      \
-        x4.o ^= x3.o;                      \
-        x2.e ^= x1.e;                      \
-        x2.o ^= x1.o;                      \
-        t0.e = x0.e;                       \
-        t0.o = x0.o;                       \
-        t4.e = x4.e;                       \
-        t4.o = x4.o;                       \
-        t3.e = x3.e;                       \
-        t3.o = x3.o;                       \
-        t1.e = x1.e;                       \
-        t1.o = x1.o;                       \
-        t2.e = x2.e;                       \
-        t2.o = x2.o;                       \
-        x0.e = t0.e ^ (~t1.e & t2.e);      \
-        x0.o = t0.o ^ (~t1.o & t2.o);      \
-        x2.e = t2.e ^ (~t3.e & t4.e);      \
-        x2.o = t2.o ^ (~t3.o & t4.o);      \
-        x4.e = t4.e ^ (~t0.e & t1.e);      \
-        x4.o = t4.o ^ (~t0.o & t1.o);      \
-        x1.e = t1.e ^ (~t2.e & t3.e);      \
-        x1.o = t1.o ^ (~t2.o & t3.o);      \
-        x3.e = t3.e ^ (~t4.e & t0.e);      \
-        x3.o = t3.o ^ (~t4.o & t0.o);      \
-        x1.e ^= x0.e;                      \
-        x1.o ^= x0.o;                      \
-        x3.e ^= x2.e;                      \
-        x3.o ^= x2.o;                      \
-        x0.e ^= x4.e;                      \
-        x0.o ^= x4.o;                      \
-        /* linear layer */                 \
-        t0.e = x0.e ^ ROTR32(x0.o, 4);     \
-        t0.o = x0.o ^ ROTR32(x0.e, 5);     \
-        t1.e = x1.e ^ ROTR32(x1.e, 11);    \
-        t1.o = x1.o ^ ROTR32(x1.o, 11);    \
-        t2.e = x2.e ^ ROTR32(x2.o, 2);     \
-        t2.o = x2.o ^ ROTR32(x2.e, 3);     \
-        t3.e = x3.e ^ ROTR32(x3.o, 3);     \
-        t3.o = x3.o ^ ROTR32(x3.e, 4);     \
-        t4.e = x4.e ^ ROTR32(x4.e, 17);    \
-        t4.o = x4.o ^ ROTR32(x4.o, 17);    \
-        x0.e ^= ROTR32(t0.o, 9);           \
-        x0.o ^= ROTR32(t0.e, 10);          \
-        x1.e ^= ROTR32(t1.o, 19);          \
-        x1.o ^= ROTR32(t1.e, 20);          \
-        x2.e ^= t2.o;                      \
-        x2.o ^= ROTR32(t2.e, 1);           \
-        x3.e ^= ROTR32(t3.e, 5);           \
-        x3.o ^= ROTR32(t3.o, 5);           \
-        x4.e ^= ROTR32(t4.o, 3);           \
-        x4.o ^= ROTR32(t4.e, 4);           \
-        x2.o = ~x2.o;                      \
-        x2.e = ~x2.e;                      \
-    }
+/* ---------------------------------------------------------------- */
+
+#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
+
+/* ---------------------------------------------------------------- */
+
+#define ROUND()                         \
+    do                                  \
+    {                                   \
+        /* s-box layer */               \
+        x0.e ^= x4.e;                   \
+        x0.o ^= x4.o;                   \
+        x4.e ^= x3.e;                   \
+        x4.o ^= x3.o;                   \
+        x2.e ^= x1.e;                   \
+        x2.o ^= x1.o;                   \
+        t0.e = x0.e;                    \
+        t0.o = x0.o;                    \
+        t4.e = x4.e;                    \
+        t4.o = x4.o;                    \
+        t3.e = x3.e;                    \
+        t3.o = x3.o;                    \
+        t1.e = x1.e;                    \
+        t1.o = x1.o;                    \
+        t2.e = x2.e;                    \
+        t2.o = x2.o;                    \
+        x0.e = t0.e ^ (~t1.e & t2.e);   \
+        x0.o = t0.o ^ (~t1.o & t2.o);   \
+        x2.e = t2.e ^ (~t3.e & t4.e);   \
+        x2.o = t2.o ^ (~t3.o & t4.o);   \
+        x4.e = t4.e ^ (~t0.e & t1.e);   \
+        x4.o = t4.o ^ (~t0.o & t1.o);   \
+        x1.e = t1.e ^ (~t2.e & t3.e);   \
+        x1.o = t1.o ^ (~t2.o & t3.o);   \
+        x3.e = t3.e ^ (~t4.e & t0.e);   \
+        x3.o = t3.o ^ (~t4.o & t0.o);   \
+        x1.e ^= x0.e;                   \
+        x1.o ^= x0.o;                   \
+        x3.e ^= x2.e;                   \
+        x3.o ^= x2.o;                   \
+        x0.e ^= x4.e;                   \
+        x0.o ^= x4.o;                   \
+        /* linear layer */              \
+        t0.e = x0.e ^ ROTR32(x0.o, 4);  \
+        t0.o = x0.o ^ ROTR32(x0.e, 5);  \
+        t1.e = x1.e ^ ROTR32(x1.e, 11); \
+        t1.o = x1.o ^ ROTR32(x1.o, 11); \
+        t2.e = x2.e ^ ROTR32(x2.o, 2);  \
+        t2.o = x2.o ^ ROTR32(x2.e, 3);  \
+        t3.e = x3.e ^ ROTR32(x3.o, 3);  \
+        t3.o = x3.o ^ ROTR32(x3.e, 4);  \
+        t4.e = x4.e ^ ROTR32(x4.e, 17); \
+        t4.o = x4.o ^ ROTR32(x4.o, 17); \
+        x0.e ^= ROTR32(t0.o, 9);        \
+        x0.o ^= ROTR32(t0.e, 10);       \
+        x1.e ^= ROTR32(t1.o, 19);       \
+        x1.o ^= ROTR32(t1.e, 20);       \
+        x2.e ^= t2.o;                   \
+        x2.o ^= ROTR32(t2.e, 1);        \
+        x3.e ^= ROTR32(t3.e, 5);        \
+        x3.o ^= ROTR32(t3.o, 5);        \
+        x4.e ^= ROTR32(t4.o, 3);        \
+        x4.o ^= ROTR32(t4.e, 4);        \
+        x2.e = ~x2.e;                   \
+        x2.o = ~x2.o;                   \
+    } while (0)
+
+/* ---------------------------------------------------------------- */
+
+#define P_LOOP(rounds)                         \
+    do                                         \
+    {                                          \
+        u32_2 t0, t1, t2, t3, t4;              \
+        for (u32 r = 12 - rounds; r < 12; r++) \
+        {                                      \
+            x2.e ^= rc_e[r];                   \
+            x2.o ^= rc_o[r];                   \
+            ROUND();                           \
+        }                                      \
+    } while (0)
+
+/* ---------------------------------------------------------------- */
+
+#define P_12()                    \
+    do                            \
+    {                             \
+        u32_2 t0, t1, t2, t3, t4; \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0xc;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0xc;              \
+        ROUND();                  \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0x6;              \
+        x2.o ^= 0xc;              \
+        ROUND();                  \
+        x2.e ^= 0x3;              \
+        x2.o ^= 0xc;              \
+        ROUND();                  \
+        x2.e ^= 0x6;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0x3;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0x6;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x6;              \
+        ROUND();                  \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0x3;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x3;              \
+        ROUND();                  \
+    } while (0)
+
+/* ---------------------------------------------------------------- */
+
+#define P_6()                     \
+    do                            \
+    {                             \
+        u32_2 t0, t1, t2, t3, t4; \
+        x2.e ^= 0x6;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0x3;              \
+        x2.o ^= 0x9;              \
+        ROUND();                  \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0x6;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x6;              \
+        ROUND();                  \
+        x2.e ^= 0xc;              \
+        x2.o ^= 0x3;              \
+        ROUND();                  \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x3;              \
+        ROUND();                  \
+    } while (0)
+
+/* ---------------------------------------------------------------- */
+
+#define P_1()                     \
+    do                            \
+    {                             \
+        u32_2 t0, t1, t2, t3, t4; \
+        x2.e ^= 0x9;              \
+        x2.o ^= 0x3;              \
+        ROUND();                  \
+    } while (0)
 
 #endif // ASCONP_H_

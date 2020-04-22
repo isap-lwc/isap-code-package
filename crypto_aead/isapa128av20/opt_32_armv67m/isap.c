@@ -1,202 +1,79 @@
-#include <string.h>
 #include "api.h"
 #include "isap.h"
-#include "Ascon-bi32-unrolling.macros"
+#include "asconp.h"
 
-/* -------------------------------------------------------------------------- */
+const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 
-typedef unsigned char u8;
-typedef unsigned long u32;
-
-/* -------------------------------------------------------------------------- */
-
-const u8 ISAP_IV1[] = {0x01,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_sK};
-const u8 ISAP_IV2[] = {0x02,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_sK};
-const u8 ISAP_IV3[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_sK};
-
-/* -------------------------------------------------------------------------- */
-
-#define EXPAND_SHORT(x)\
-    x &= 0x0000ffff;\
-    x = (x | (x << 8)) & 0x00ff00ff;\
-    x = (x | (x << 4)) & 0x0f0f0f0f;\
-    x = (x | (x << 2)) & 0x33333333;\
-    x = (x | (x << 1)) & 0x55555555;\
-
-/* -------------------------------------------------------------------------- */
-
-#define EXPAND_U32(var,var_o,var_e)\
-   /*var 32-bit, and var_o/e 16-bit*/\
-   t0_e = (var_e);\
-   t0_o = (var_o);\
-   EXPAND_SHORT(t0_e);\
-   EXPAND_SHORT(t0_o);\
-   var = t0_e | (t0_o << 1);\
-
-/* -------------------------------------------------------------------------- */
-
-#define COMPRESS_LONG(x)\
-   x &= 0x55555555;\
-   x = (x | (x >> 1)) & 0x33333333;\
-   x = (x | (x >> 2)) & 0x0f0f0f0f;\
-   x = (x | (x >> 4)) & 0x00ff00ff;\
-   x = (x | (x >> 8)) & 0x0000ffff;\
-
-/* -------------------------------------------------------------------------- */
-
-#define COMPRESS_U32(var,var_o,var_e)\
-  /*var 32-bit, and var_o/e 16-bit*/\
-  var_e = var;\
-  var_o = var_e >> 1;\
-  COMPRESS_LONG(var_e);\
-  COMPRESS_LONG(var_o);\
-
-/* -------------------------------------------------------------------------- */
-
-#define ABSORB_LANE(xxx)\
-    x0_l = xxx##32[idx32];\
-    ENDIAN_SWAP(x0_l);\
-    idx32++;\
-    x0_h = xxx##32[idx32];\
-    ENDIAN_SWAP(x0_h);\
-    idx32++;\
-    BI_LANE(x0_l,x0_h);\
-    x0_o ^= x0_l;\
-    x0_e ^= x0_h;\
-
-/* -------------------------------------------------------------------------- */
-
-#define ABSORB_LANE_PARTIAL(xxx)\
-    u32 lane32[2];\
-    u8 *lane8 = (u8*)lane32;\
-    u32 idx8 = idx32*4;\
-    for (u32 i = 0; i < 8; i++) {\
-        if(i<(rem_bytes)){\
-            lane8[i] = xxx##8[idx8];\
-            idx8++;\
-        } else if(i==rem_bytes){\
-            lane8[i] = 0x80;\
-        } else {\
-            lane8[i] = 0x00;\
-        }\
-    }\
-    x0_l = lane32[0];\
-    x0_h = lane32[1];\
-    ENDIAN_SWAP(x0_l);\
-    ENDIAN_SWAP(x0_h);\
-    BI_LANE(x0_l,x0_h);\
-    x0_o ^= x0_l;\
-    x0_e ^= x0_h;\
-
-/* -------------------------------------------------------------------------- */
-
-#define SQUEEZE_LANE\
-    x0_l = x0_o;\
-    x0_h = x0_e;\
-    IB_LANE(x0_l,x0_h);\
-    ENDIAN_SWAP(x0_l);\
-    ENDIAN_SWAP(x0_h);\
-    c32[idx32] = x0_l ^ m32[idx32];\
-    idx32++;\
-    c32[idx32] = x0_h ^ m32[idx32];\
-    idx32++;\
-
-/* -------------------------------------------------------------------------- */
-
-#define SQUEEZE_LANE_PARTIAL\
-    u32 lane32[2];\
-    IB_LANE(x0_o,x0_e);\
-    ENDIAN_SWAP(x0_o);\
-    ENDIAN_SWAP(x0_e);\
-    lane32[0] = x0_o;\
-    lane32[1] = x0_e;\
-    u8 *lane8 = (u8*)lane32;\
-    u32 idx8 = idx32*4;\
-    for (u32 i = 0; i < rem_bytes; i++) {\
-        c[idx8] = lane8[i] ^ m[idx8];\
-        idx8++;\
-    }\
-
-/* -------------------------------------------------------------------------- */
-
-#define BI_LANE(xo,xe)\
-    t0_o=xo;\
-    COMPRESS_U32(t0_o,t1_o,t1_e);\
-    t1_o<<=16;\
-    t1_e<<=16;\
-    t0_o=xe;\
-    COMPRESS_U32(t0_o,xo,xe);\
-    xo|=t1_o;\
-    xe|=t1_e;\
-
-/* -------------------------------------------------------------------------- */
-
-#define IB_LANE(xo,xe)\
-    EXPAND_U32(t1_o,xo>>16,xe>>16);\
-    EXPAND_U32(t1_e,xo,xe);\
-    xo=t1_o;\
-    xe=t1_e;\
-
-/* -------------------------------------------------------------------------- */
-
-#define ENDIAN_SWAP(x)\
-    __asm__ __volatile__ (\
-    "rev %[y], %[y]\n\t"\
-    : [y] "+r" (x)::);\
+#define P_sB_UROL P_1()
+#define P_sE P_LOOP(6)
+#define P_sE_UROL P_6()
+#define P_sH P_LOOP(12)
+#define P_sH_UROL P_12()
+#define P_sK P_LOOP(12)
+#define P_sK_UROL P_12()
 
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
 /******************************************************************************/
 
 void isap_rk(
-	const u8 *k,
-	const u8 *iv,
-	const u8 *in,
-	const u32 inlen,
-	u8 *out,
-	const u32 outlen
-){
-	// Init State
-    u32 *k32 = (u32 *)k;
-    u32 *iv32 = (u32 *)iv;
-    u32 *out32 = (u32 *)out;
+    const u8 *k,
+    const u8 *iv,
+    const u8 *y,
+    u8 *out,
+    const u32 outlen)
+{
+    // State variables
+    u32_2 x0, x1, x2, x3, x4;
 
-    u32 t0_o, t1_o, t0_e, t1_e;
-    u32 x0_o = k32[0]; ENDIAN_SWAP(x0_o);
-    u32 x0_e = k32[1]; ENDIAN_SWAP(x0_e);
-    u32 x1_o = k32[2]; ENDIAN_SWAP(x1_o);
-    u32 x1_e = k32[3]; ENDIAN_SWAP(x1_e);
-    u32 x2_o = iv32[0]; ENDIAN_SWAP(x2_o);
-    u32 x2_e = iv32[1]; ENDIAN_SWAP(x2_e);
-    u32 x3_o = 0;
-    u32 x3_e = 0;
-    u32 x4_o = 0;
-    u32 x4_e = 0;
-    BI_LANE(x0_o,x0_e);
-    BI_LANE(x1_o,x1_e);
-    BI_LANE(x2_o,x2_e);
-    P12_32;
+    // Initialize
+    to_bit_interleaving(&x0, U64BIG(*(u64 *)(k + 0)));
+    to_bit_interleaving(&x1, U64BIG(*(u64 *)(k + 8)));
+    to_bit_interleaving(&x2, U64BIG(*(u64 *)(iv + 0)));
+    x3.o = 0;
+    x3.e = 0;
+    x4.o = 0;
+    x4.e = 0;
+    P_sK;
 
-	// Absorb
-	for (u32 i = 0; i < inlen*8-1; i++){
-		u32 cur_byte_pos = i/8;
-		u32 cur_bit_pos = 7-(i%8);
-		u8 cur_bit = ((in[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
-		x0_o ^= ((u32)cur_bit)<<(24);
-		P1_32;
-	}
-	u8 cur_bit = ((in[inlen-1]) & 0x01) << 7;
-	x0_o ^= ((u32)cur_bit)<<(24);
-	P12_32;
+    // Absorb Y, bit by bit
+    for (u8 i = 0; i < 16; i++)
+    {
+        u32 cur_byte = *y;
+        x0.o ^= (cur_byte & 0x80) << 24;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x40) << 25;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x20) << 26;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x10) << 27;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x08) << 28;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x04) << 29;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x02) << 30;
+        P_sB_UROL;
+        x0.o ^= (cur_byte & 0x01) << 31;
+        if (i != 15)
+        {
+            P_sB_UROL;
+            y += 1;
+        }
+    }
 
-    // Extract output
-	out32[0] = x0_o;
-	out32[1] = x0_e;
-	out32[2] = x1_o;
-	out32[3] = x1_e;
-    if(outlen>16){
-        out32[4] = x2_o;
-    	out32[5] = x2_e;
+    // Squeeze - Derive K*
+    P_sK;
+    *(u32 *)(out + 0) = x0.o;
+    *(u32 *)(out + 4) = x0.e;
+    *(u32 *)(out + 8) = x1.o;
+    *(u32 *)(out + 12) = x1.e;
+    if (outlen > 16)
+    {
+        *(u32 *)(out + 16) = x2.o;
+        *(u32 *)(out + 20) = x2.e;
     }
 }
 
@@ -205,110 +82,121 @@ void isap_rk(
 /******************************************************************************/
 
 void isap_mac(
-	const u8 *k,
-	const u8 *npub,
-	const u8 *ad, const u32 adlen,
-	const u8 *in, const u32 inlen,
-	u8 *tag
-){
-	// Init State
-    u32 *npub32 = (u32*)npub;
-    u32 *iv32 = (u32*)ISAP_IV1;
-    u32 *tag32 = (u32*)tag;
+    const u8 *k,
+    const u8 *npub,
+    const u8 *ad, u64 adlen,
+    const u8 *c, u64 clen,
+    u8 *tag)
+{
+    // State and temporary variables
+    u32_2 x0, x1, x2, x3, x4;
+    u32_2 t0;
+    u64 tmp0;
 
-    u32 t0_o, t1_o, t0_e, t1_e;
-    u32 x0_o = npub32[0]; ENDIAN_SWAP(x0_o);
-    u32 x0_e = npub32[1]; ENDIAN_SWAP(x0_e);
-    u32 x1_o = npub32[2]; ENDIAN_SWAP(x1_o);
-    u32 x1_e = npub32[3]; ENDIAN_SWAP(x1_e);
-    u32 x2_o = iv32[0]; ENDIAN_SWAP(x2_o);
-    u32 x2_e = iv32[1]; ENDIAN_SWAP(x2_e);
-    u32 x3_o = 0;
-    u32 x3_e = 0;
-    u32 x4_o = 0;
-    u32 x4_e = 0;
-    BI_LANE(x0_o,x0_e);
-    BI_LANE(x1_o,x1_e);
-    BI_LANE(x2_o,x2_e);
-	P12_32;
-
-	// Absorb AD
-	u32 rem_bytes = adlen;
-	u32 *ad32 = (u32 *)ad;
-    u8 *ad8 = (u8 *)ad;
-	u32 idx32 = 0;
-    u32 x0_l, x0_h;
+    // Initialize
+    to_bit_interleaving(&x0, U64BIG(*(u64 *)npub + 0));
+    to_bit_interleaving(&x1, U64BIG(*(u64 *)(npub + 8)));
+    to_bit_interleaving(&x2, U64BIG(*(u64 *)(ISAP_IV_A)));
+    x3.o = 0;
+    x3.e = 0;
+    x4.o = 0;
+    x4.e = 0;
+    P_sH;
 
     // Absorb full lanes of AD
-    while(rem_bytes>8){
-        ABSORB_LANE(ad);
-        P12_32;
-        rem_bytes -= 8;
+    while (adlen >= 8)
+    {
+        to_bit_interleaving(&t0, U64BIG(*(u64 *)ad));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        adlen -= ISAP_rH / 8;
+        ad += ISAP_rH / 8;
+        P_sH_UROL;
     }
 
-    // Absorb last lane of AD (partial)
-    if(rem_bytes>0){
-        ABSORB_LANE_PARTIAL(ad);
-        P12_32;
+    // Absorb partial lane of AD and add padding
+    if (adlen > 0)
+    {
+        tmp0 = 0;
+        u8 *tmp0_bytes = (u8 *)&tmp0;
+        u8 i;
+        for (i = 0; i < adlen; i++)
+        {
+            tmp0_bytes[i] = *ad;
+            ad += 1;
+        }
+        tmp0_bytes[i] = 0x80;
+        to_bit_interleaving(&t0, U64BIG(tmp0));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        P_sH;
     }
 
-    // Absorb last lane of AD (empty)
-    if(rem_bytes==0){
-        x0_o ^= 0x80000000;
-        P12_32;
+    // Absorb AD padding if not already done before
+    if (adlen == 0)
+    {
+        x0.o ^= 0x80000000;
+        P_sH;
     }
 
-	// Domain Seperation
-	x4_e ^= ((u32)0x01);
+    // Domain Seperation
+    x4.e ^= ((u32)0x01);
 
-	// Absorb M
-	rem_bytes = inlen;
-	u32 *in32 = (u32 *)in;
-    u8 *in8 = (u8 *)in;
-	idx32 = 0;
-
-    // Absorb full lanes of C/M
-    while(rem_bytes>8){
-        ABSORB_LANE(in);
-        P12_32;
-        rem_bytes -= 8;
+    // Absorb full lanes of C
+    while (clen >= 8)
+    {
+        to_bit_interleaving(&t0, U64BIG(*(u64 *)c));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        P_sH_UROL;
+        clen -= ISAP_rH / 8;
+        c += ISAP_rH / 8;
     }
 
-    // Absorb last lane of C/M (partial)
-    if(rem_bytes>0){
-        ABSORB_LANE_PARTIAL(in);
-        P12_32;
+    // Absorb partial lane of C and add padding
+    if (clen > 0)
+    {
+        tmp0 = 0;
+        u8 *tmp0_bytes = (u8 *)&tmp0;
+        u8 i;
+        for (i = 0; i < clen; i++)
+        {
+            tmp0_bytes[i] = *c;
+            c += 1;
+        }
+        tmp0_bytes[i] = 0x80;
+        to_bit_interleaving(&t0, U64BIG(tmp0));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        P_sH;
     }
 
-    // Absorb last lane of C/M (empty)
-    if(rem_bytes==0){
-        x0_o ^= 0x80000000;
-        P12_32;
+    // Absorb C padding if not already done before
+    if (clen == 0)
+    {
+        x0.o ^= 0x80000000;
+        P_sH;
     }
 
-	// Derive Ka*
-	u32 y32[CRYPTO_KEYBYTES/4];
-    IB_LANE(x0_o,x0_e);
-    IB_LANE(x1_o,x1_e);
-    ENDIAN_SWAP(x0_o); y32[0] = x0_o;
-	ENDIAN_SWAP(x0_e); y32[1] = x0_e;
-	ENDIAN_SWAP(x1_o); y32[2] = x1_o;
-	ENDIAN_SWAP(x1_e); y32[3] = x1_e;
-    u32 ka_star32[CRYPTO_KEYBYTES/4];
-	isap_rk(k,ISAP_IV2,(u8*)y32,CRYPTO_KEYBYTES,(u8*)ka_star32,CRYPTO_KEYBYTES);
+    // Finalize - Derive Ka*
+    u64 y64[CRYPTO_KEYBYTES / 8];
+    from_bit_interleaving(&tmp0, x0);
+    y64[0] = U64BIG(tmp0);
+    from_bit_interleaving(&tmp0, x1);
+    y64[1] = U64BIG(tmp0);
+    u32 ka_star32[CRYPTO_KEYBYTES / 4];
+    isap_rk(k, ISAP_IV_KA, (u8 *)y64, (u8 *)ka_star32, CRYPTO_KEYBYTES);
 
-    // Squeezing Tag
-    x0_o = ka_star32[0];
-	x0_e = ka_star32[1];
-	x1_o = ka_star32[2];
-	x1_e = ka_star32[3];
-    P12_32;
-    IB_LANE(x0_o,x0_e);
-    IB_LANE(x1_o,x1_e);
-    ENDIAN_SWAP(x0_o); tag32[0] = x0_o;
-    ENDIAN_SWAP(x0_e); tag32[1] = x0_e;
-    ENDIAN_SWAP(x1_o); tag32[2] = x1_o;
-    ENDIAN_SWAP(x1_e); tag32[3] = x1_e;
+    // Finalize - Squeeze T
+    x0.o = ka_star32[0];
+    x0.e = ka_star32[1];
+    x1.o = ka_star32[2];
+    x1.e = ka_star32[3];
+    P_sH;
+    from_bit_interleaving(&tmp0, x0);
+    *(u64 *)(tag + 0) = U64BIG(tmp0);
+    from_bit_interleaving(&tmp0, x1);
+    *(u64 *)(tag + 8) = U64BIG(tmp0);
 }
 
 /******************************************************************************/
@@ -316,50 +204,52 @@ void isap_mac(
 /******************************************************************************/
 
 void isap_enc(
-	const u8 *k,
-	const u8 *npub,
-	const u8 *m, const u32 mlen,
-	u8 *c
-){
+    const u8 *k,
+    const u8 *npub,
+    const u8 *m, u64 mlen,
+    u8 *c)
+{
     // Derive Ke
-	u8 ke[ISAP_STATE_SZ-CRYPTO_NPUBBYTES];
-	isap_rk(k,ISAP_IV3,npub,CRYPTO_NPUBBYTES,ke,ISAP_STATE_SZ-CRYPTO_NPUBBYTES);
+    u8 ke[ISAP_STATE_SZ - CRYPTO_NPUBBYTES];
+    isap_rk(k, ISAP_IV_KE, npub, ke, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
 
-    u32 *ke32 = (u32*)ke;
-    u32 *npub32 = (u32*)npub;
+    // State and temporary variables
+    u32_2 x0, x1, x2, x3, x4;
+    u64 tmp0;
 
     // Init State
-    u32 t0_o, t1_o, t0_e, t1_e;
-    u32 x0_o = ke32[0];
-    u32 x0_e = ke32[1];
-    u32 x1_o = ke32[2];
-    u32 x1_e = ke32[3];
-    u32 x2_o = ke32[4];
-    u32 x2_e = ke32[5];
-    u32 x3_o = npub32[0]; ENDIAN_SWAP(x3_o);
-    u32 x3_e = npub32[1]; ENDIAN_SWAP(x3_e);
-    u32 x4_o = npub32[2]; ENDIAN_SWAP(x4_o);
-    u32 x4_e = npub32[3]; ENDIAN_SWAP(x4_e);
-    BI_LANE(x3_o,x3_e);
-    BI_LANE(x4_o,x4_e);
-
-    // Squeeze Keystream
-    u32 rem_bytes = mlen;
-	u32 *m32 = (u32 *)m;
-	u32 *c32 = (u32 *)c;
-	u32 idx32 = 0;
-    u32 x0_l, x0_h;
+    x0.o = *(u32 *)(ke + 0);
+    x0.e = *(u32 *)(ke + 4);
+    x1.o = *(u32 *)(ke + 8);
+    x1.e = *(u32 *)(ke + 12);
+    x2.o = *(u32 *)(ke + 16);
+    x2.e = *(u32 *)(ke + 20);
+    to_bit_interleaving(&x3, U64BIG(*(u64 *)npub));
+    to_bit_interleaving(&x4, U64BIG(*(u64 *)(npub + 8)));
 
     // Squeeze full lanes
-	while(rem_bytes>=8){
-        P6_32;
-		SQUEEZE_LANE;
-        rem_bytes -= 8;
-	}
+    while (mlen >= 8)
+    {
+        P_sE_UROL;
+        from_bit_interleaving(&tmp0, x0);
+        *(u64 *)c = *(u64 *)m ^ U64BIG(tmp0);
+        mlen -= 8;
+        m += ISAP_rH / 8;
+        c += ISAP_rH / 8;
+    }
 
     // Squeeze partial lane
-    if(rem_bytes>0){
-        P6_32;
-        SQUEEZE_LANE_PARTIAL;
-	}
+    if (mlen > 0)
+    {
+        P_sE;
+        from_bit_interleaving(&tmp0, x0);
+        tmp0 = U64BIG(tmp0);
+        u8 *tmp0_bytes = (u8 *)&tmp0;
+        for (u8 i = 0; i < mlen; i++)
+        {
+            *c = *m ^ tmp0_bytes[i];
+            m += 1;
+            c += 1;
+        }
+    }
 }

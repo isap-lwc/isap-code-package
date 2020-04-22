@@ -6,6 +6,14 @@ const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_s
 const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 
+#define P_sB_UROL P_12()
+#define P_sE P_LOOP(12)
+#define P_sE_UROL P_12()
+#define P_sH P_LOOP(12)
+#define P_sH_UROL P_12()
+#define P_sK P_LOOP(12)
+#define P_sK_UROL P_12()
+
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
 /******************************************************************************/
@@ -14,13 +22,11 @@ void isap_rk(
     const u8 *k,
     const u8 *iv,
     const u8 *y,
-    const u64 ylen,
     u8 *out,
-    const u64 outlen)
+    const u32 outlen)
 {
     // State variables
     u32_2 x0, x1, x2, x3, x4;
-    u32_2 t0, t1, t2, t3, t4;
 
     // Initialize
     to_bit_interleaving(&x0, U64BIG(*(u64 *)(k + 0)));
@@ -30,22 +36,22 @@ void isap_rk(
     x3.e = 0;
     x4.o = 0;
     x4.e = 0;
-    PERMUTE(ISAP_sK);
+    P_sK;
 
     // Absorb Y, bit by bit
-    for (u8 i = 0; i < ylen * 8 - 1; i++)
+    for (u8 i = 0; i < 127; i++)
     {
         u8 cur_byte_pos = i / 8;
         u8 cur_bit_pos = 7 - (i % 8);
         u32 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
         x0.o ^= ((u32)cur_bit) << 24;
-        PERMUTE(ISAP_sB);
+        P_sB_UROL;
     }
-    u8 cur_bit = ((y[ylen - 1]) & 0x01) << 7;
+    u8 cur_bit = ((y[15]) & 0x01) << 7;
     x0.o ^= ((u32)cur_bit) << (24);
 
     // Squeeze - Derive K*
-    PERMUTE(ISAP_sK);
+    P_sK;
     *(u32 *)(out + 0) = x0.o;
     *(u32 *)(out + 4) = x0.e;
     *(u32 *)(out + 8) = x1.o;
@@ -70,7 +76,7 @@ void isap_mac(
 {
     // State and temporary variables
     u32_2 x0, x1, x2, x3, x4;
-    u32_2 t0, t1, t2, t3, t4;
+    u32_2 t0;
     u64 tmp0;
 
     // Initialize
@@ -81,7 +87,7 @@ void isap_mac(
     x3.e = 0;
     x4.o = 0;
     x4.e = 0;
-    PERMUTE(ISAP_sH);
+    P_sH;
 
     // Absorb full lanes of AD
     while (adlen >= 8)
@@ -91,7 +97,7 @@ void isap_mac(
         x0.o ^= t0.o;
         adlen -= ISAP_rH / 8;
         ad += ISAP_rH / 8;
-        PERMUTE(ISAP_sH);
+        P_sH_UROL;
     }
 
     // Absorb partial lane of AD and add padding
@@ -109,14 +115,14 @@ void isap_mac(
         to_bit_interleaving(&t0, U64BIG(tmp0));
         x0.e ^= t0.e;
         x0.o ^= t0.o;
-        PERMUTE(ISAP_sH);
+        P_sH;
     }
 
     // Absorb AD padding if not already done before
     if (adlen == 0)
     {
         x0.o ^= 0x80000000;
-        PERMUTE(ISAP_sH);
+        P_sH;
     }
 
     // Domain Seperation
@@ -128,7 +134,7 @@ void isap_mac(
         to_bit_interleaving(&t0, U64BIG(*(u64 *)c));
         x0.e ^= t0.e;
         x0.o ^= t0.o;
-        PERMUTE(ISAP_sH);
+        P_sH_UROL;
         clen -= ISAP_rH / 8;
         c += ISAP_rH / 8;
     }
@@ -148,14 +154,14 @@ void isap_mac(
         to_bit_interleaving(&t0, U64BIG(tmp0));
         x0.e ^= t0.e;
         x0.o ^= t0.o;
-        PERMUTE(ISAP_sH);
+        P_sH;
     }
 
     // Absorb C padding if not already done before
     if (clen == 0)
     {
         x0.o ^= 0x80000000;
-        PERMUTE(ISAP_sH);
+        P_sH;
     }
 
     // Finalize - Derive Ka*
@@ -165,14 +171,14 @@ void isap_mac(
     from_bit_interleaving(&tmp0, x1);
     y64[1] = U64BIG(tmp0);
     u32 ka_star32[CRYPTO_KEYBYTES / 4];
-    isap_rk(k, ISAP_IV_KA, (u8 *)y64, CRYPTO_KEYBYTES, (u8 *)ka_star32, CRYPTO_KEYBYTES);
+    isap_rk(k, ISAP_IV_KA, (u8 *)y64, (u8 *)ka_star32, CRYPTO_KEYBYTES);
 
     // Finalize - Squeeze T
     x0.o = ka_star32[0];
     x0.e = ka_star32[1];
     x1.o = ka_star32[2];
     x1.e = ka_star32[3];
-    PERMUTE(ISAP_sH);
+    P_sH;
     from_bit_interleaving(&tmp0, x0);
     *(u64 *)(tag + 0) = U64BIG(tmp0);
     from_bit_interleaving(&tmp0, x1);
@@ -191,11 +197,10 @@ void isap_enc(
 {
     // Derive Ke
     u8 ke[ISAP_STATE_SZ - CRYPTO_NPUBBYTES];
-    isap_rk(k, ISAP_IV_KE, npub, CRYPTO_NPUBBYTES, ke, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+    isap_rk(k, ISAP_IV_KE, npub, ke, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
 
     // State and temporary variables
     u32_2 x0, x1, x2, x3, x4;
-    u32_2 t0, t1, t2, t3, t4;
     u64 tmp0;
 
     // Init State
@@ -211,7 +216,7 @@ void isap_enc(
     // Squeeze full lanes
     while (mlen >= 8)
     {
-        PERMUTE(ISAP_sE);
+        P_sE_UROL;
         from_bit_interleaving(&tmp0, x0);
         *(u64 *)c = *(u64 *)m ^ U64BIG(tmp0);
         mlen -= 8;
@@ -222,7 +227,7 @@ void isap_enc(
     // Squeeze partial lane
     if (mlen > 0)
     {
-        PERMUTE(ISAP_sE);
+        P_sE;
         from_bit_interleaving(&tmp0, x0);
         tmp0 = U64BIG(tmp0);
         u8 *tmp0_bytes = (u8 *)&tmp0;
