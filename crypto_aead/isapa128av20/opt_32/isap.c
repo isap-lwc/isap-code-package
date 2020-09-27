@@ -6,7 +6,7 @@ const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_s
 const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 
-#define P_sB P1(&x0,&x1,&x2,&x3,&x4)
+#define P_sB PX(1,&x0,&x1,&x2,&x3,&x4)
 #define P_sE PX(6,&x0,&x1,&x2,&x3,&x4)
 #define P_sH PX(12,&x0,&x1,&x2,&x3,&x4)
 #define P_sK PX(12,&x0,&x1,&x2,&x3,&x4)
@@ -33,7 +33,6 @@ void isap_rk(
     x3.e = 0;
     x4.o = 0;
     x4.e = 0;
-
     P_sK;
 
     // Absorb Y, bit by bit
@@ -43,7 +42,7 @@ void isap_rk(
         u8 cur_bit_pos = 7 - (i % 8);
         u32 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
         x0.o ^= ((u32)cur_bit) << 24;
-        P1(&x0,&x1,&x2,&x3,&x4);
+        P_sB;
     }
     u8 cur_bit = ((y[15]) & 0x01) << 7;
     x0.o ^= ((u32)cur_bit) << (24);

@@ -15,7 +15,9 @@ int crypto_aead_encrypt(
 	*clen = mlen+ISAP_TAG_SZ;
 
 	// Encrypt plaintext
-	isap_enc(k,npub,m,mlen,c);
+	if (mlen > 0) {
+		isap_enc(k,npub,m,mlen,c);
+	}
 
 	// Generate tag
 	unsigned char *tag = c+mlen;
@@ -48,7 +50,9 @@ int crypto_aead_decrypt(
 
 	// Perform decryption if tag is correct
 	if(eq_cnt == (unsigned long)ISAP_TAG_SZ){
-		isap_enc(k,npub,c,*mlen,m);
+		if (*mlen > 0) {
+			isap_enc(k,npub,c,*mlen,m);
+		}
 		return 0;
 	} else {
 		return -1;
