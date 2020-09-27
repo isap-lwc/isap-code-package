@@ -29,8 +29,8 @@
 void isap_mac(
 	const unsigned char *k,
 	const unsigned char *npub,
-	const unsigned char *ad, const unsigned long long adlen,
-	const unsigned char *c, const unsigned long long clen,
+	const unsigned char *ad, unsigned long long adlen,
+	const unsigned char *c, unsigned long long clen,
 	unsigned char *tag);
 
 void isap_rk(
@@ -38,12 +38,12 @@ void isap_rk(
 	const unsigned char *iv,
 	const unsigned char *in,
 	unsigned char *out,
-	const unsigned long outlen);
+	const unsigned char outlen);
 
 void isap_enc(
 	const unsigned char *k,
 	const unsigned char *npub,
-	const unsigned char *m, const unsigned long long mlen,
+	const unsigned char *m, unsigned long long mlen,
 	unsigned char *c);
 
 #endif

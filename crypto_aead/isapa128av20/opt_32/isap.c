@@ -6,13 +6,10 @@ const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_s
 const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 
-#define P_sB_UROL P_1()
-#define P_sE P_LOOP(6)
-#define P_sE_UROL P_6()
-#define P_sH P_LOOP(12)
-#define P_sH_UROL P_12()
-#define P_sK P_LOOP(12)
-#define P_sK_UROL P_12()
+#define P_sB P1(&x0,&x1,&x2,&x3,&x4)
+#define P_sE PX(6,&x0,&x1,&x2,&x3,&x4)
+#define P_sH PX(12,&x0,&x1,&x2,&x3,&x4)
+#define P_sK PX(12,&x0,&x1,&x2,&x3,&x4)
 
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
@@ -23,7 +20,7 @@ void isap_rk(
     const u8 *iv,
     const u8 *y,
     u8 *out,
-    const u32 outlen)
+    const u8 outlen)
 {
     // State variables
     u32_2 x0, x1, x2, x3, x4;
@@ -36,6 +33,7 @@ void isap_rk(
     x3.e = 0;
     x4.o = 0;
     x4.e = 0;
+
     P_sK;
 
     // Absorb Y, bit by bit
@@ -45,7 +43,7 @@ void isap_rk(
         u8 cur_bit_pos = 7 - (i % 8);
         u32 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
         x0.o ^= ((u32)cur_bit) << 24;
-        P_sB_UROL;
+        P1(&x0,&x1,&x2,&x3,&x4);
     }
     u8 cur_bit = ((y[15]) & 0x01) << 7;
     x0.o ^= ((u32)cur_bit) << (24);
@@ -97,7 +95,7 @@ void isap_mac(
         x0.o ^= t0.o;
         adlen -= ISAP_rH / 8;
         ad += ISAP_rH / 8;
-        P_sH_UROL;
+        P_sH;
     }
 
     // Absorb partial lane of AD and add padding
@@ -134,7 +132,7 @@ void isap_mac(
         to_bit_interleaving(&t0, U64BIG(*(u64 *)c));
         x0.e ^= t0.e;
         x0.o ^= t0.o;
-        P_sH_UROL;
+        P_sH;
         clen -= ISAP_rH / 8;
         c += ISAP_rH / 8;
     }
@@ -216,7 +214,7 @@ void isap_enc(
     // Squeeze full lanes
     while (mlen >= 8)
     {
-        P_sE_UROL;
+        P_sE;
         from_bit_interleaving(&tmp0, x0);
         *(u64 *)c = *(u64 *)m ^ U64BIG(tmp0);
         mlen -= 8;

@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 #include "api.h"
 #include "isap.h"
 
@@ -44,7 +42,7 @@ int crypto_aead_decrypt(
 
 	// Compare tag
 	unsigned long eq_cnt = 0;
-	for(size_t i = 0; i < ISAP_TAG_SZ; i++) {
+	for(unsigned int i = 0; i < ISAP_TAG_SZ; i++) {
 		eq_cnt += (tag[i] == c[(*mlen)+i]);
 	}
 
