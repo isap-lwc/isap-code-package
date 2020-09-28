@@ -72,7 +72,7 @@ void from_bit_interleaving(u64 *out, u32_2 in)
 
 /* ---------------------------------------------------------------- */
 
-void inline pxx(u32_2* x0, u32_2* x1, u32_2* x2, u32_2* x3, u32_2* x4) {
+void static inline pxx(u32_2* x0, u32_2* x1, u32_2* x2, u32_2* x3, u32_2* x4) {
     u32_2 t0, t1, t2, t3, t4;
     /* s-box layer */
     (*x0).e ^= (*x4).e;
@@ -134,7 +134,7 @@ void inline pxx(u32_2* x0, u32_2* x1, u32_2* x2, u32_2* x3, u32_2* x4) {
 
 /* ---------------------------------------------------------------- */
 
-void inline PX(u32 rounds, u32_2* x0, u32_2* x1, u32_2* x2, u32_2* x3, u32_2* x4) {
+void static inline PX(u32 rounds, u32_2* x0, u32_2* x1, u32_2* x2, u32_2* x3, u32_2* x4) {
     for (u32 r = 12 - rounds; r < 12; r++){
         (*x2).e ^= rc_e[r];
         (*x2).o ^= rc_o[r];
