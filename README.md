@@ -26,8 +26,8 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |  85.7 |  24.5 |  21.9 |
 | Intel i5-6200U (x64)     |   104 |  34.3 |  31.4 |
-| Raspberry Pi 1B (ARMv6m) |   551 |   171 |   159 |
-| STM32F0405 (ARMv7m)      |  1223 |   352 |   311 |
+| Raspberry Pi 1B (ARMv6)  |   551 |   171 |   159 |
+| STM32F303 (ARMv7m)       |   542 |   168 |   152 |
 
 ### ISAP-K-128a (recommended)
 
@@ -35,8 +35,8 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |   295 |  64.1 |  54.3 |
 | Intel i5-6200U (x64)     |   342 |  72.8 |  61.3 |
-| Raspberry Pi 1B (ARMv6m) |  3464 |   743 |   635 |
-| STM32F0405 (ARMv7m)      |  4007 |   808 |   658 |
+| Raspberry Pi 1B (ARMv6)  |  3464 |   743 |   635 |
+| STM32F303 (ARMv7m)       |  2135 |   415 |   338 |
 
 ### ISAP-A-128
 
@@ -44,8 +44,8 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |   511 |  48.9 |  29.8 |
 | Intel i5-6200U (x64)     |   698 |  68.1 |  42.0 |
-| Raspberry Pi 1B (ARMv6m) |  3209 |   324 |   212 |
-| STM32F0405 (ARMv7m)      |  6818 |   675 |   406 |
+| Raspberry Pi 1B (ARMv6)  |  3209 |   324 |   212 |
+| STM32F303 (ARMv7m)       |  3027 |   312 |   194 |
 
 ### ISAP-K-128
 
@@ -53,8 +53,8 @@ ISAP was especially designed for scenarios where implementation security is requ
 |:-------------------------|------:|------:|------:|
 | AMD Ryzen 7 1700 (x64)   |  2108 |   156 |  75.0 |
 | Intel i5-6200U (x64)     |  2318 |   173 |  84.0 |
-| Raspberry Pi 1B (ARMv6m) | 23917 |  1790 |   878 |
-| STM32F0405 (ARMv7m)      | 25472 |  1909 |   869 |
+| Raspberry Pi 1B (ARMv6)  | 23917 |  1790 |   878 |
+| STM32F303 (ARMv7m)       | 13100 |  1035 |   510 |
 
 ## Run KATs:
 
@@ -104,9 +104,9 @@ First, compile code for the desired architecture. Then execute: `./getcycles`
 * **ISAP-A-128**
     `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapa128v20/opt_32_armv67m crypto_aead/isapa128v20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128a**
-    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv67m crypto_aead/isapk128av20/opt_32_armv67m/*.c crypto_aead/isapk128av20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128av20/opt_32_armv7m crypto_aead/isapk128av20/opt_32_armv7m/*.c crypto_aead/isapk128av20/opt_32_armv7m/KeccakP-400-armv7m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 * **ISAP-K-128**
-    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv67m crypto_aead/isapk128v20/opt_32_armv67m/*.c crypto_aead/isapk128v20/opt_32_armv67m/KeccakP-400-armv6m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
+    `gcc -march=native -O3 -DNDEBUG -Icrypto_aead/isapk128v20/opt_32_armv7m crypto_aead/isapk128v20/opt_32_armv7m/*.c crypto_aead/isapk128v20/opt_32_armv7m/KeccakP-400-armv7m-le-gcc.s -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 
 ## License Information:
 
