@@ -36,8 +36,7 @@ void isap_rk(
     P_sK;
 
     // Absorb Y, bit by bit
-    for (u8 i = 0; i < 127; i++)
-    {
+    for (u8 i = 0; i < 127; i++) {
         u8 cur_byte_pos = i / 8;
         u8 cur_bit_pos = 7 - (i % 8);
         u32 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
@@ -53,8 +52,7 @@ void isap_rk(
     *(u32 *)(out + 4) = x0.e;
     *(u32 *)(out + 8) = x1.o;
     *(u32 *)(out + 12) = x1.e;
-    if (outlen > 16)
-    {
+    if (outlen > 16) {
         *(u32 *)(out + 16) = x2.o;
         *(u32 *)(out + 20) = x2.e;
     }
