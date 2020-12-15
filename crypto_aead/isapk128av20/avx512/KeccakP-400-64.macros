@@ -30,9 +30,13 @@ static const UINT16 KeccakF400RoundConstants[20] = {
 #define declareABCDEX \
     union State S; \
     union State B; \
+    union State B1; \
+    union State B2; \
     union State E; \
     UINT16 Ca, Ce, Ci, Co, Cu; \
     UINT16 Da, De, Di, Do, Du; \
+    __m512i pchi1 = _mm512_set_epi32(0, 0, 0, 0x000014, 0x180017, 0x160015, 0x0f0013, 0x120011, 0x10000a, 0xe000d, 0xc000b, 0x50009, 0x80007, 0x60000, 0x40003, 0x20001); \
+    __m512i pchi2 = _mm512_set_epi32(0, 0, 0, 0x000015, 0x140018, 0x170016, 0x10000f, 0x130012, 0x11000b, 0xa000e, 0xd000c, 0x60005, 0x90008, 0x70001, 0x00004, 0x30002); \
 
 #define prepareThetaX \
     Ca = S.X.Aba^S.X.Aga^S.X.Aka^S.X.Ama^S.X.Asa; \
@@ -105,31 +109,9 @@ static const UINT16 KeccakF400RoundConstants[20] = {
     A.X.Ase ^= De; \
     B.X.Asu = ROL16(A.X.Ase, 2); \
 \
-    E.X.Aba =   B.X.Aba ^((~B.X.Abe)&  B.X.Abi ); \
-    E.X.Abe =   B.X.Abe ^((~B.X.Abi)&  B.X.Abo ); \
-    E.X.Abi =   B.X.Abi ^((~B.X.Abo)&  B.X.Abu ); \
-    E.X.Abo =   B.X.Abo ^((~B.X.Abu)&  B.X.Aba ); \
-    E.X.Abu =   B.X.Abu ^((~B.X.Aba)&  B.X.Abe ); \
-    E.X.Aga =   B.X.Aga ^((~B.X.Age)&  B.X.Agi ); \
-    E.X.Age =   B.X.Age ^((~B.X.Agi)&  B.X.Ago ); \
-    E.X.Agi =   B.X.Agi ^((~B.X.Ago)&  B.X.Agu ); \
-    E.X.Ago =   B.X.Ago ^((~B.X.Agu)&  B.X.Aga ); \
-    E.X.Agu =   B.X.Agu ^((~B.X.Aga)&  B.X.Age ); \
-    E.X.Aka =   B.X.Aka ^((~B.X.Ake)&  B.X.Aki ); \
-    E.X.Ake =   B.X.Ake ^((~B.X.Aki)&  B.X.Ako ); \
-    E.X.Aki =   B.X.Aki ^((~B.X.Ako)&  B.X.Aku ); \
-    E.X.Ako =   B.X.Ako ^((~B.X.Aku)&  B.X.Aka ); \
-    E.X.Aku =   B.X.Aku ^((~B.X.Aka)&  B.X.Ake ); \
-    E.X.Ama =   B.X.Ama ^((~B.X.Ame)&  B.X.Ami ); \
-    E.X.Ame =   B.X.Ame ^((~B.X.Ami)&  B.X.Amo ); \
-    E.X.Ami =   B.X.Ami ^((~B.X.Amo)&  B.X.Amu ); \
-    E.X.Amo =   B.X.Amo ^((~B.X.Amu)&  B.X.Ama ); \
-    E.X.Amu =   B.X.Amu ^((~B.X.Ama)&  B.X.Ame ); \
-    E.X.Asa =   B.X.Asa ^((~B.X.Ase)&  B.X.Asi ); \
-    E.X.Ase =   B.X.Ase ^((~B.X.Asi)&  B.X.Aso ); \
-    E.X.Asi =   B.X.Asi ^((~B.X.Aso)&  B.X.Asu ); \
-    E.X.Aso =   B.X.Aso ^((~B.X.Asu)&  B.X.Asa ); \
-    E.X.Asu =   B.X.Asu ^((~B.X.Asa)&  B.X.Ase ); \
+    B1.S = _mm512_permutexvar_epi16(pchi1, B.S); \
+    B2.S = _mm512_permutexvar_epi16(pchi2, B.S); \
+    E.S = _mm512_ternarylogic_epi64(B.S, B1.S, B2.S, 0xd2); \
     E.X.Aba ^= KeccakF400RoundConstants[i]; \
     Ca = E.X.Aba; \
     Ce = E.X.Abe; \

@@ -17,7 +17,7 @@ union Lane {
 };
 
 union State {
-    __m512i s;
+    __m512i S;
     UINT8 l8[50];
     UINT16 l16[25];
     UINT64 l64[6]; // incomplete
