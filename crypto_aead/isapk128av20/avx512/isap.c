@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <immintrin.h>
 #include "api.h"
 #include "isap.h"
 #include "KeccakP-400-64.macros"
@@ -16,6 +17,7 @@ union Lane {
 };
 
 union State {
+    __m512i s;
     UINT8 l8[50];
     UINT16 l16[25];
     UINT64 l64[6]; // incomplete
