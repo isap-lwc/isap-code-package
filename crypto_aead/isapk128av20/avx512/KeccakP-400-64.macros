@@ -37,6 +37,9 @@ static const UINT16 KeccakF400RoundConstants[20] = {
     UINT16 Da, De, Di, Do, Du; \
     __m512i pchi1 = _mm512_set_epi32(0, 0, 0, 0x000014, 0x180017, 0x160015, 0x0f0013, 0x120011, 0x10000a, 0xe000d, 0xc000b, 0x50009, 0x80007, 0x60000, 0x40003, 0x20001); \
     __m512i pchi2 = _mm512_set_epi32(0, 0, 0, 0x000015, 0x140018, 0x170016, 0x10000f, 0x130012, 0x11000b, 0xa000e, 0xd000c, 0x60005, 0x90008, 0x70001, 0x00004, 0x30002); \
+    __m512i ppi = _mm512_set_epi32(0, 0, 0, 0x0015, 0xf000e, 0x80002, 0x170011, 0xb0005, 0x40014, 0x13000d, 0x70001, 0x160010, 0xa0009, 0x30018, 0x12000c, 0x60000); \
+    __m512i lrho = _mm512_set_epi32(0, 0, 0, 0x000e, 0x8000d, 0x20002, 0x80005, 0xf000d, 0x90007, 0x9000b, 0xa0003, 0x40007, 0x6000c, 0x4000b, 0xc000e, 0x10000); \
+    __m512i rrho = _mm512_set_epi32(0, 0, 0, 0x100010 - 0x000e, 0x100010 - 0x8000d, 0x100010 - 0x20002, 0x100010 - 0x80005, 0x100010 - 0xf000d, 0x100010 - 0x90007, 0x100010 - 0x9000b, 0x100010 - 0xa0003, 0x100010 - 0x40007, 0x100010 - 0x6000c, 0x100010 - 0x4000b, 0x100010 - 0xc000e, 0x100010 - 0x10000); \
 
 #define prepareThetaX \
     Ca = S.X.Aba^S.X.Aga^S.X.Aka^S.X.Ama^S.X.Asa; \
@@ -59,56 +62,35 @@ static const UINT16 KeccakF400RoundConstants[20] = {
     A.X.Aki ^= Di; \
     A.X.Amo ^= Do; \
     A.X.Asu ^= Du; \
-    B.X.Aba = A.X.Aba; \
-    B.X.Abe = ROL16(A.X.Age, 12); \
-    B.X.Abi = ROL16(A.X.Aki, 11); \
-    B.X.Abo = ROL16(A.X.Amo, 5); \
-    B.X.Abu = ROL16(A.X.Asu, 14); \
 \
     A.X.Abo ^= Do; \
     A.X.Agu ^= Du; \
     A.X.Aka ^= Da; \
     A.X.Ame ^= De; \
     A.X.Asi ^= Di; \
-    B.X.Aga = ROL16(A.X.Abo, 12); \
-    B.X.Age = ROL16(A.X.Agu, 4); \
-    B.X.Agi = ROL16(A.X.Aka, 3); \
-    B.X.Ago = ROL16(A.X.Ame, 13); \
-    B.X.Agu = ROL16(A.X.Asi, 13); \
 \
     A.X.Abe ^= De; \
     A.X.Agi ^= Di; \
     A.X.Ako ^= Do; \
     A.X.Amu ^= Du; \
     A.X.Asa ^= Da; \
-    B.X.Aka = ROL16(A.X.Abe, 1); \
-    B.X.Ake = ROL16(A.X.Agi, 6); \
-    B.X.Aki = ROL16(A.X.Ako, 9); \
-    B.X.Ako = ROL16(A.X.Amu, 8); \
-    B.X.Aku = ROL16(A.X.Asa, 2); \
 \
     A.X.Abu ^= Du; \
     A.X.Aga ^= Da; \
     A.X.Ake ^= De; \
     A.X.Ami ^= Di; \
     A.X.Aso ^= Do; \
-    B.X.Ama = ROL16(A.X.Abu, 11); \
-    B.X.Ame = ROL16(A.X.Aga, 4); \
-    B.X.Ami = ROL16(A.X.Ake, 10); \
-    B.X.Amo = ROL16(A.X.Ami, 15); \
-    B.X.Amu = ROL16(A.X.Aso, 8); \
 \
     A.X.Abi ^= Di; \
     A.X.Ago ^= Do; \
     A.X.Aku ^= Du; \
     A.X.Ama ^= Da; \
     A.X.Ase ^= De; \
-    B.X.Asa = ROL16(A.X.Abi, 14); \
-    B.X.Ase = ROL16(A.X.Ago, 7); \
-    B.X.Asi = ROL16(A.X.Aku, 7); \
-    B.X.Aso = ROL16(A.X.Ama, 9); \
-    B.X.Asu = ROL16(A.X.Ase, 2); \
 \
+    B1.S = _mm512_sllv_epi16 (A.S, lrho); \
+    B2.S = _mm512_srlv_epi16 (A.S, rrho); \
+    B.S = _mm512_or_epi32 (B1.S, B2.S); \
+    B.S = _mm512_permutexvar_epi16(ppi, B.S); \
     B1.S = _mm512_permutexvar_epi16(pchi1, B.S); \
     B2.S = _mm512_permutexvar_epi16(pchi2, B.S); \
     E.S = _mm512_ternarylogic_epi64(B.S, B1.S, B2.S, 0xd2); \
