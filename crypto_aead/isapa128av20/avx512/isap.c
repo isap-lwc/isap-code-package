@@ -325,7 +325,9 @@ void isap_mac_enc(
     isap_rk(k,ISAP_IV3,npub,CRYPTO_NPUBBYTES,state_enc,ISAP_STATE_SZ-CRYPTO_NPUBBYTES);
     t0 = t1 = t2 = t3 = t4 = 0;
      
-
+    state_enc64[3] = npub64[0];
+    state_enc64[4] = npub64[1];
+    
     // Init state_mac
     x0 = U64BIG(npub64[0]);
     x1 = U64BIG(npub64[1]);
@@ -345,12 +347,7 @@ void isap_mac_enc(
     
     
     
-        //start encrypting
-    x0 = U64BIG(state_enc64[0]);
-    x1 = U64BIG(state_enc64[1]);
-    x2 = U64BIG(state_enc64[2]);
-    x3 = U64BIG(npub64[0]);
-    x4 = U64BIG(npub64[1]);
+
 
     // Squeeze key stream
     long long rem_enc_bytes = mlen;
@@ -377,10 +374,22 @@ void isap_mac_enc(
         for (u32 i = 0; i < encbytes2; i++) 
           tmpm2 = (tmpm2 << 8) | ((u64)m[idx8_enc+encbytes1+(encbytes2-i-1)]);
         
+        
+        //perms for encryption
+        x0 = U64BIG(state_enc64[0]);
+        x1 = U64BIG(state_enc64[1]);
+        x2 = U64BIG(state_enc64[2]);
+        x3 = U64BIG(state_enc64[3]);
+        x4 = U64BIG(state_enc64[4]);
         P6;
         tmpc1 = U64BIG(x0) ^ tmpm1;
         P6;
         tmpc2 = U64BIG(x0) ^ tmpm2;
+        state_enc64[0] = U64BIG(x0);
+        state_enc64[1] = U64BIG(x1);
+        state_enc64[2] = U64BIG(x2);
+        state_enc64[3] = U64BIG(x3);
+        state_enc64[4] = U64BIG(x4);
 
         // Squeeze  lane 
         u8 *lane8 = (u8 *)&tmpc1;
@@ -410,8 +419,27 @@ void isap_mac_enc(
     x4 ^= 0x0000000000000001ULL;
 
     // Absorb C
-    ABSORB_LANES(c,clen);
-    P12;
+    long long rem_mac_bytes = clen; 
+    u32 idx8_mac = 0; 
+    u64 tmpc_mac;
+    while(rem_mac_bytes>=0){ 
+        tmpc_mac = 0; 
+        u8 *lane8 = (u8 *)&tmpc_mac;  
+        for (u32 i = 0; i < 8; i++) { 
+          if(i<(rem_mac_bytes)){ 
+              lane8[i] = c[idx8_mac]; 
+              idx8_mac++; 
+          } else if(i==rem_mac_bytes){ 
+              lane8[i] = 0x80; 
+          } else { 
+              lane8[i] = 0x00; 
+          } 
+        } 
+        x0 ^= U64BIG(tmpc_mac);
+        P12;
+        rem_mac_bytes -= ISAP_rH_SZ;
+    } 
+
 
     // Derive K*
     state_mac64[0] = U64BIG(x0);
