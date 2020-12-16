@@ -73,79 +73,13 @@ static const UINT16 KeccakF400RoundConstants[20] = {
     B1.S = _mm512_permutexvar_epi16(pchi1, B.S); \
     B2.S = _mm512_permutexvar_epi16(pchi2, B.S); \
     E.S = _mm512_ternarylogic_epi64(B.S, B1.S, B2.S, 0xd2); \
-    E.X.Aba ^= KeccakF400RoundConstants[i]; \
+    E.S = _mm512_xor_epi64 (E.S, _mm512_set_epi64(0,0,0,0,0,0,0,KeccakF400RoundConstants[i])); \
 \
 
-/*
-   Ca = A.X.Aba^A.X.Aga^A.X.Aka^A.X.Ama^A.X.Asa; \
-    Ce = A.X.Abe^A.X.Age^A.X.Ake^A.X.Ame^A.X.Ase; \
-    Ci = A.X.Abi^A.X.Agi^A.X.Aki^A.X.Ami^A.X.Asi; \
-    Co = A.X.Abo^A.X.Ago^A.X.Ako^A.X.Amo^A.X.Aso; \
-    Cu = A.X.Abu^A.X.Agu^A.X.Aku^A.X.Amu^A.X.Asu; \
-    Da = Cu^ROL16(Ce, 1); \
-    De = Ca^ROL16(Ci, 1); \
-    Di = Ce^ROL16(Co, 1); \
-    Do = Ci^ROL16(Cu, 1); \
-    Du = Co^ROL16(Ca, 1); \
-\
-    A.X.Aba ^= Da; \
-    A.X.Age ^= De; \
-    A.X.Aki ^= Di; \
-    A.X.Amo ^= Do; \
-    A.X.Asu ^= Du; \
-\
-    A.X.Abo ^= Do; \
-    A.X.Agu ^= Du; \
-    A.X.Aka ^= Da; \
-    A.X.Ame ^= De; \
-    A.X.Asi ^= Di; \
-\
-    A.X.Abe ^= De; \
-    A.X.Agi ^= Di; \
-    A.X.Ako ^= Do; \
-    A.X.Amu ^= Du; \
-    A.X.Asa ^= Da; \
-\
-    A.X.Abu ^= Du; \
-    A.X.Aga ^= Da; \
-    A.X.Ake ^= De; \
-    A.X.Ami ^= Di; \
-    A.X.Aso ^= Do; \
-\
-    A.X.Abi ^= Di; \
-    A.X.Ago ^= Do; \
-    A.X.Aku ^= Du; \
-    A.X.Ama ^= Da; \
-    A.X.Ase ^= De; \
-\
-*/
+
 
 #define copyStateVariables(A, Y) \
-    A.X.Aba = Y.X.Aba; \
-    A.X.Abe = Y.X.Abe; \
-    A.X.Abi = Y.X.Abi; \
-    A.X.Abo = Y.X.Abo; \
-    A.X.Abu = Y.X.Abu; \
-    A.X.Aga = Y.X.Aga; \
-    A.X.Age = Y.X.Age; \
-    A.X.Agi = Y.X.Agi; \
-    A.X.Ago = Y.X.Ago; \
-    A.X.Agu = Y.X.Agu; \
-    A.X.Aka = Y.X.Aka; \
-    A.X.Ake = Y.X.Ake; \
-    A.X.Aki = Y.X.Aki; \
-    A.X.Ako = Y.X.Ako; \
-    A.X.Aku = Y.X.Aku; \
-    A.X.Ama = Y.X.Ama; \
-    A.X.Ame = Y.X.Ame; \
-    A.X.Ami = Y.X.Ami; \
-    A.X.Amo = Y.X.Amo; \
-    A.X.Amu = Y.X.Amu; \
-    A.X.Asa = Y.X.Asa; \
-    A.X.Ase = Y.X.Ase; \
-    A.X.Asi = Y.X.Asi; \
-    A.X.Aso = Y.X.Aso; \
-    A.X.Asu = Y.X.Asu; \
+    A.S = Y.S; \
 \
 
 // prevent "warning: backslash-newline at end of file"
