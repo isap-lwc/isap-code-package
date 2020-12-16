@@ -1,14 +1,14 @@
 #ifndef ISAP_H
 #define ISAP_H
 
-// Rate in bytes
+// Rate in bits
 #define ISAP_rH 64
 #define ISAP_rB 1
 
 // Number of rounds
 #define ISAP_sH 12
-#define ISAP_sB 12
-#define ISAP_sE 12
+#define ISAP_sB 1
+#define ISAP_sE 6
 #define ISAP_sK 12
 
 // State size in bytes
