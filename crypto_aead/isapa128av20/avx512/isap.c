@@ -118,7 +118,6 @@ static const int R[5][2] = {
             x0 ^= U64BIG(src64[idx64]); \
             P12; \
             x0 ^= 0x8000000000000000ULL; \
-            P12; \
             break; \
         } else { \
             u64 lane64; \
@@ -135,7 +134,6 @@ static const int R[5][2] = {
                 } \
             } \
             x0 ^= U64BIG(lane64); \
-            P12; \
             break; \
         } \
     } \
@@ -216,10 +214,12 @@ void isap_mac(
     ABSORB_LANES(ad,adlen);
 
     // Domain seperation
+    P12;
     x4 ^= 0x0000000000000001ULL;
 
     // Absorb C
     ABSORB_LANES(c,clen);
+    P12;
 
     // Derive K*
     state64[0] = U64BIG(x0);
@@ -296,4 +296,107 @@ void isap_enc(
             break;
         }
     }
+}
+
+
+/******************************************************************************/
+/*                             IsapMac and Enc                                */
+/******************************************************************************/
+
+void isap_mac_enc(
+    const u8 *k,
+    const u8 *npub,
+    const u8 *ad, const u64 adlen,
+    u8 *c, const u64 clen,
+    const u8 *m, const u64 mlen,
+    u8 *tag
+){
+    u8 state_mac[ISAP_STATE_SZ];
+    const u64 *npub64 = (u64 *)npub;
+    u64 *state_mac64 = (u64 *)state_mac;
+    u64 x0, x1, x2, x3, x4;
+    u64 t0, t1, t2, t3, t4;
+    t0 = t1 = t2 = t3 = t4 = 0;
+    
+    u8 state_enc[ISAP_STATE_SZ];
+
+    // Init state_enc
+    u64 *state_enc64 = (u64 *)state_enc;
+    isap_rk(k,ISAP_IV3,npub,CRYPTO_NPUBBYTES,state_enc,ISAP_STATE_SZ-CRYPTO_NPUBBYTES);
+    t0 = t1 = t2 = t3 = t4 = 0;
+    x0 = U64BIG(state_enc64[0]);
+    x1 = U64BIG(state_enc64[1]);
+    x2 = U64BIG(state_enc64[2]);
+    x3 = U64BIG(npub64[0]);
+    x4 = U64BIG(npub64[1]);
+    P6;
+
+    // Squeeze key stream
+    u64 rem_bytes = mlen;
+    u64 *m64 = (u64 *)m;
+    u64 *c64 = (u64 *)c;
+    u32 idx64 = 0;
+    while(1){
+        if(rem_bytes>ISAP_rH_SZ){
+            // Squeeze full lane
+            c64[idx64] = U64BIG(x0) ^ m64[idx64];
+            idx64++;
+            P6;
+            rem_bytes -= ISAP_rH_SZ;
+        } else if(rem_bytes==ISAP_rH_SZ){
+            // Squeeze full lane and stop
+            c64[idx64] = U64BIG(x0) ^ m64[idx64];
+            break;
+        } else {
+            // Squeeze partial lane and stop
+            u64 lane64 = U64BIG(x0);
+            u8 *lane8 = (u8 *)&lane64;
+            u32 idx8 = idx64*8;
+            for (u32 i = 0; i < rem_bytes; i++) {
+                c[idx8] = lane8[i] ^ m[idx8];
+                idx8++;
+            }
+            break;
+        }
+    }
+    
+    
+    
+
+    // Init state_mac
+    x0 = U64BIG(npub64[0]);
+    x1 = U64BIG(npub64[1]);
+    x2 = U64BIG(((u64 *)ISAP_IV1)[0]);
+    x3 = x4 = 0;
+    P12;
+
+    // Absorb AD
+    ABSORB_LANES(ad,adlen);
+
+    // Domain seperation
+    P12;
+    x4 ^= 0x0000000000000001ULL;
+
+    // Absorb C
+    ABSORB_LANES(c,clen);
+    P12;
+
+    // Derive K*
+    state_mac64[0] = U64BIG(x0);
+    state_mac64[1] = U64BIG(x1);
+    state_mac64[2] = U64BIG(x2);
+    state_mac64[3] = U64BIG(x3);
+    state_mac64[4] = U64BIG(x4);
+    isap_rk(k,ISAP_IV2,(u8 *)state_mac64,CRYPTO_KEYBYTES,(u8 *)state_mac64,CRYPTO_KEYBYTES);
+    x0 = U64BIG(state_mac64[0]);
+    x1 = U64BIG(state_mac64[1]);
+    x2 = U64BIG(state_mac64[2]);
+    x3 = U64BIG(state_mac64[3]);
+    x4 = U64BIG(state_mac64[4]);
+
+    // Squeeze tag
+    P12;
+    unsigned long long *tag64 = (u64 *)tag;
+    tag64[0] = U64BIG(x0);
+    tag64[1] = U64BIG(x1);
 }

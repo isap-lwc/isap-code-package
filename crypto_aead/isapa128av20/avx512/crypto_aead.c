@@ -14,14 +14,9 @@ int crypto_aead_encrypt(
 	// Ciphertext length is mlen + tag length
 	*clen = mlen+ISAP_TAG_SZ;
 
-	// Encrypt plaintext
-	if (mlen > 0) {
-		isap_enc(k,npub,m,mlen,c);
-	}
-
-	// Generate tag
+	// Encrypt plaintext and Generate tag
 	unsigned char *tag = c+mlen;
-	isap_mac(k,npub,ad,adlen,c,mlen,tag);
+	isap_mac_enc(k,npub,ad,adlen,c,mlen,m,mlen,tag);
 	return 0;
 }
 
