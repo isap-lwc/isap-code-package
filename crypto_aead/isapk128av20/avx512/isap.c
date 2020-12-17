@@ -60,16 +60,12 @@ union State {
     size_t idx = 0; \
     while(1){ \
         if(rem_bytes>ISAP_rH_SZ){ \
-            S.l64[0] ^= *((UINT64 *)(src+idx+0)); \
-            S.l64[1] ^= *((UINT64 *)(src+idx+8)); \
-            S.l16[8] ^= *((UINT64 *)(src+idx+16)); \
+            S.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,src+idx));\
             idx += ISAP_rH_SZ; \
             rem_bytes -= ISAP_rH_SZ; \
             PermuteRoundsHX; \
         } else if(rem_bytes==ISAP_rH_SZ){ \
-            S.l64[0] ^= *((UINT64 *)(src+idx+0)); \
-            S.l64[1] ^= *((UINT64 *)(src+idx+8)); \
-            S.l16[8] ^= *((UINT64 *)(src+idx+16)); \
+            S.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,src+idx));\
             PermuteRoundsHX; \
             S.X.Aba ^= 0x80ULL; \
             PermuteRoundsHX; \
@@ -139,33 +135,19 @@ void isap_rk(
         size_t cur_byte_pos = i/8;
         size_t cur_bit_pos = 7-(i%8);
         UINT16 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
-        S.X.Aba ^= cur_bit;
+        S.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(1,&cur_bit));
         PermuteRoundsBX;
     }
     UINT16 cur_bit = ((y[ylen-1]) & 0x01) << 7;
-    S.X.Aba ^= cur_bit;
+    S.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(1,&cur_bit));
     PermuteRoundsKX;
 
     // Extract K*
-    out16[0] = S.X.Aba;
-    out16[1] = S.X.Abe;
-    out16[2] = S.X.Abi;
-    out16[3] = S.X.Abo;
-    out16[4] = S.X.Abu;
-    out16[5] = S.X.Aga;
-    out16[6] = S.X.Age;
-    out16[7] = S.X.Agi;
-    if(outlen == ISAP_STATE_SZ-CRYPTO_NPUBBYTES){
-        out16[8] = S.X.Ago;
-        out16[9] = S.X.Agu;
-        out16[10] = S.X.Aka;
-        out16[11] = S.X.Ake;
-        out16[12] = S.X.Aki;
-        out16[13] = S.X.Ako;
-        out16[14] = S.X.Aku;
-        out16[15] = S.X.Ama;
-        out16[16] = S.X.Ame;
-    }
+    if(outlen == ISAP_STATE_SZ-CRYPTO_NPUBBYTES)
+      _mm512_mask_storeu_epi16 (out16, 0x1ffff, S.S);
+    else
+      _mm512_mask_storeu_epi16 (out16, 0xff, S.S);
+    
 }
 
 /******************************************************************************/
@@ -214,43 +196,22 @@ void isap_mac(
     ABSORB_MAC(ad,adlen);
 
     // Domain seperation
-    S.X.Asu ^= 0x0100;
+    S.S = _mm512_xor_epi64 (S.S, _mm512_set_epi32(0, 0, 0, 0x0100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     // Absorb C
     ABSORB_MAC(c,clen);
 
     // Derive K*
     UINT16 y[8];
-    y[0] = (UINT16) S.X.Aba;
-    y[1] = (UINT16) S.X.Abe;
-    y[2] = (UINT16) S.X.Abi;
-    y[3] = (UINT16) S.X.Abo;
-    y[4] = (UINT16) S.X.Abu;
-    y[5] = (UINT16) S.X.Aga;
-    y[6] = (UINT16) S.X.Age;
-    y[7] = (UINT16) S.X.Agi;
+    _mm512_mask_storeu_epi16 (y, 0xff, S.S);
     isap_rk(k, ISAP_IV2, (UINT8 *)y, CRYPTO_KEYBYTES, (UINT8 *)y, CRYPTO_KEYBYTES);
-    S.X.Aba = y[0];
-    S.X.Abe = y[1];
-    S.X.Abi = y[2];
-    S.X.Abo = y[3];
-    S.X.Abu = y[4];
-    S.X.Aga = y[5];
-    S.X.Age = y[6];
-    S.X.Agi = y[7];
+    S.S = _mm512_mask_loadu_epi16 (S.S, 0xff, y);
 
     // Squeeze tag
     PermuteRoundsHX;
 
     UINT16 *tag16 = (UINT16 *)tag;
-    tag16[0] = S.X.Aba;
-    tag16[1] = S.X.Abe;
-    tag16[2] = S.X.Abi;
-    tag16[3] = S.X.Abo;
-    tag16[4] = S.X.Abu;
-    tag16[5] = S.X.Aga;
-    tag16[6] = S.X.Age;
-    tag16[7] = S.X.Agi;
+    _mm512_mask_storeu_epi16 (tag16, 0xff, S.S);
 }
 
 /******************************************************************************/
@@ -305,21 +266,17 @@ void isap_enc(
     while(1){
         if(rem_bytes>ISAP_rH_SZ){
             // Squeeze full lane and continue
-            union Lane lane;
-            lane.l64[0] = S.l64[0] ^ *((UINT64 *)(m+idx+0));
-            lane.l64[1] = S.l64[1] ^ *((UINT64 *)(m+idx+8));
-            lane.l16[8] = S.l16[8] ^ *((UINT16 *)(m+idx+16));
-            memcpy(c+idx, &lane, ISAP_rH_SZ);
+            union State temp;
+            temp.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,m+idx));
+            _mm512_mask_storeu_epi16 (c+idx, 0x3ffff, temp.S);
             idx += ISAP_rH_SZ;
             rem_bytes -= ISAP_rH_SZ;
             PermuteRoundsEX;
         } else if(rem_bytes==ISAP_rH_SZ){
             // Squeeze full lane and stop
-            union Lane lane;
-            lane.l64[0] = S.l64[0] ^ *((UINT64 *)(m+idx+0));
-            lane.l64[1] = S.l64[1] ^ *((UINT64 *)(m+idx+8));
-            lane.l16[8] = S.l16[8] ^ *((UINT16 *)(m+idx+16));
-            memcpy(c+idx, &lane, ISAP_rH_SZ);
+            union State temp;
+            temp.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,m+idx));
+            _mm512_mask_storeu_epi16 (c+idx, 0x3ffff, temp.S);
             break;
         } else {
             // Squeeze partial lane and stop
