@@ -355,7 +355,13 @@ void isap_mac_enc(
     u64 tmpm1,tmpm2;
     u64 encbytes1,encbytes2;
     u32 idx8_enc = 0;
-    while(rem_enc_bytes>0){
+    u32 idx8_mac = 0; 
+    u64 tmpc_mac;
+    u64 domain_separation = 0x0000000000000001ULL;
+    long long rem_mac_bytes = clen; 
+    do{
+    
+        //prepare plaintext to encrypt
         tmpm1 = 0;
         tmpm2 = 0;
         if(rem_enc_bytes>=ISAP_rH_SZ)
@@ -373,6 +379,43 @@ void isap_mac_enc(
           tmpm1 = (tmpm1 << 8) | ((u64)m[idx8_enc+(encbytes1-i-1)]);
         for (u32 i = 0; i < encbytes2; i++) 
           tmpm2 = (tmpm2 << 8) | ((u64)m[idx8_enc+encbytes1+(encbytes2-i-1)]);
+          
+        //prepare ciphertext to authenticate
+        tmpc_mac = 0; 
+        if(rem_enc_bytes < mlen){
+          u8 *lane8 = (u8 *)&tmpc_mac;  
+          for (u32 i = 0; i < 8; i++) { 
+            if(i<(rem_mac_bytes)){ 
+                lane8[i] = c[idx8_mac]; 
+                idx8_mac++; 
+            } else if(i==rem_mac_bytes){ 
+                lane8[i] = 0x80; 
+            } else { 
+                lane8[i] = 0x00; 
+            } 
+          }
+          rem_mac_bytes -= ISAP_rH_SZ;
+        }
+        
+        
+        //Restore MAC state
+        x0 = U64BIG(state_mac64[0]);
+        x1 = U64BIG(state_mac64[1]);
+        x2 = U64BIG(state_mac64[2]);
+        x3 = U64BIG(state_mac64[3]);
+        x4 = U64BIG(state_mac64[4]);
+        
+        x0 ^= U64BIG(tmpc_mac);
+        
+        P12;
+        x4 ^= domain_separation;
+        
+        //Save MAC state
+        state_mac64[0] = U64BIG(x0);
+        state_mac64[1] = U64BIG(x1);
+        state_mac64[2] = U64BIG(x2);
+        state_mac64[3] = U64BIG(x3);
+        state_mac64[4] = U64BIG(x4);
         
         
         //perms for encryption
@@ -403,7 +446,9 @@ void isap_mac_enc(
             idx8_enc++;
         }
         rem_enc_bytes -= 2*ISAP_rH_SZ;
-    }
+        domain_separation = 0;
+        
+    }while(rem_enc_bytes>0);
     //end encrypting
     
     //Restore MAC state
@@ -414,14 +459,7 @@ void isap_mac_enc(
     x4 = U64BIG(state_mac64[4]);
     
 
-    // Domain seperation
-    P12;
-    x4 ^= 0x0000000000000001ULL;
-
     // Absorb C
-    long long rem_mac_bytes = clen; 
-    u32 idx8_mac = 0; 
-    u64 tmpc_mac;
     while(rem_mac_bytes>=0){ 
         tmpc_mac = 0; 
         u8 *lane8 = (u8 *)&tmpc_mac;  
