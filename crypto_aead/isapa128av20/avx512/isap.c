@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <immintrin.h>
 #include "api.h"
 #include "isap.h"
 
@@ -72,6 +73,52 @@ const u8 ISAP_IV3[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_
     x0 ^= t0;\
 })
 
+#define ROUNDAVX(C1,C2) ({\
+    x2a =_mm_xor_si128 (x2a, _mm_set_epi64x (C1, C2));\
+    x0a =_mm_xor_si128 (x0a, x4a);\
+    x4a =_mm_xor_si128 (x4a, x3a);\
+    x2a =_mm_xor_si128 (x2a, x1a);\
+    t0a = x0a;\
+    t4a = x4a;\
+    t3a = x3a;\
+    t1a = x1a;\
+    t2a = x2a;\
+    x0a = _mm_ternarylogic_epi64(t0a, t1a, t2a, 0xd2);\
+    x2a = _mm_ternarylogic_epi64(t2a, t3a, t4a, 0xd2);\
+    x4a = _mm_ternarylogic_epi64(t4a, t0a, t1a, 0xd2);\
+    x1a = _mm_ternarylogic_epi64(t1a, t2a, t3a, 0xd2);\
+    x3a = _mm_ternarylogic_epi64(t3a, t4a, t0a, 0xd2);\
+    x1a =_mm_xor_si128 (x1a, x0a);\
+    t1a  = x1a;\
+    x1a = _mm_ror_epi64(x1a, R[1][0]);\
+    x3a =_mm_xor_si128 (x3a, x2a);\
+    t2a  = x2a;\
+    x2a = _mm_ror_epi64(x2a, R[2][0]);\
+    t4a  = x4a;\
+    t2a =_mm_xor_si128 (t2a, x2a);\
+    x2a = _mm_ror_epi64(x2a, R[2][1] - R[2][0]);\
+    t3a  = x3a;\
+    t1a =_mm_xor_si128 (t1a, x1a);\
+    x3a = _mm_ror_epi64(x3a, R[3][0]);\
+    x0a =_mm_xor_si128 (x0a, x4a);\
+    x4a = _mm_ror_epi64(x4a, R[4][0]);\
+    t3a =_mm_xor_si128 (t3a, x3a);\
+    x2a =_mm_xor_si128 (x2a, t2a);\
+    x1a = _mm_ror_epi64(x1a, R[1][1] - R[1][0]);\
+    t0a  = x0a;\
+    x2a = _mm_xor_si128 (x2a, _mm_set_epi64x (~0ULL, ~0ULL));\
+    x3a = _mm_ror_epi64(x3a, R[3][1] - R[3][0]);\
+    t4a =_mm_xor_si128 (t4a, x4a);\
+    x4a = _mm_ror_epi64(x4a, R[4][1] - R[4][0]);\
+    x3a =_mm_xor_si128 (x3a, t3a);\
+    x1a =_mm_xor_si128 (x1a, t1a);\
+    x0a = _mm_ror_epi64(x0a, R[0][0]);\
+    x4a =_mm_xor_si128 (x4a, t4a);\
+    t0a =_mm_xor_si128 (t0a, x0a);\
+    x0a = _mm_ror_epi64(x0a, R[0][1] - R[0][0]);\
+    x0a =_mm_xor_si128 (x0a, t0a);\
+})
+
 #define P12 ({\
     ROUND(0xf0);\
     ROUND(0xe1);\
@@ -94,6 +141,24 @@ const u8 ISAP_IV3[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_
     ROUND(0x69);\
     ROUND(0x5a);\
     ROUND(0x4b);\
+})
+
+#define P6_avx_first ({\
+    ROUNDAVX(0xf0,0x96);\
+    ROUNDAVX(0xe1,0x87);\
+    ROUNDAVX(0xd2,0x78);\
+    ROUNDAVX(0xc3,0x69);\
+    ROUNDAVX(0xb4,0x5a);\
+    ROUNDAVX(0xa5,0x4b);\
+})
+
+#define P6_avx_second ({\
+    ROUNDAVX(0x96,0x96);\
+    ROUNDAVX(0x87,0x87);\
+    ROUNDAVX(0x78,0x78);\
+    ROUNDAVX(0x69,0x69);\
+    ROUNDAVX(0x5a,0x5a);\
+    ROUNDAVX(0x4b,0x4b);\
 })
 
 #define P1 ({\
@@ -316,6 +381,8 @@ void isap_mac_enc(
     u64 *state_mac64 = (u64 *)state_mac;
     u64 x0, x1, x2, x3, x4;
     u64 t0, t1, t2, t3, t4;
+    __m128i x0a, x1a, x2a, x3a, x4a;
+    __m128i  t0a, t1a, t2a, t3a, t4a;
     t0 = t1 = t2 = t3 = t4 = 0;
     
     u8 state_enc[ISAP_STATE_SZ];
@@ -356,7 +423,7 @@ void isap_mac_enc(
     u64 encbytes1,encbytes2;
     u32 idx8_enc = 0;
     u32 idx8_mac = 0; 
-    u64 tmpc_mac;
+    u64 tmpc_mac[2];
     u64 domain_separation = 0x0000000000000001ULL;
     long long rem_mac_bytes = clen; 
     do{
@@ -381,9 +448,9 @@ void isap_mac_enc(
           tmpm2 = (tmpm2 << 8) | ((u64)m[idx8_enc+encbytes1+(encbytes2-i-1)]);
           
         //prepare ciphertext to authenticate
-        tmpc_mac = 0; 
+        tmpc_mac[1] = 0; 
         if(rem_enc_bytes < mlen){
-          u8 *lane8 = (u8 *)&tmpc_mac;  
+          u8 *lane8 = (u8 *)&tmpc_mac[1];  
           for (u32 i = 0; i < 8; i++) { 
             if(i<(rem_mac_bytes)){ 
                 lane8[i] = c[idx8_mac]; 
@@ -394,6 +461,7 @@ void isap_mac_enc(
                 lane8[i] = 0x00; 
             } 
           }
+          tmpc_mac[1] = U64BIG(tmpc_mac[1]);
           rem_mac_bytes -= ISAP_rH_SZ;
         }
         
@@ -405,9 +473,35 @@ void isap_mac_enc(
         x3 = U64BIG(state_mac64[3]);
         x4 = U64BIG(state_mac64[4]);
         
-        x0 ^= U64BIG(tmpc_mac);
+        //x0 ^= tmpc_mac[1];
         
-        P12;
+        u64 tmp[2];
+        tmp[1] = x0;
+        x0a = _mm_mask_loadu_epi64 (x0a, 2, tmp);
+        tmp[1] = x1;
+        x1a = _mm_mask_loadu_epi64 (x1a, 2, tmp);
+        tmp[1] = x2;
+        x2a = _mm_mask_loadu_epi64 (x2a, 2, tmp);
+        tmp[1] = x3;
+        x3a = _mm_mask_loadu_epi64 (x3a, 2, tmp);
+        tmp[1] = x4;
+        x4a = _mm_mask_loadu_epi64 (x4a, 2, tmp);
+        x0a = _mm_xor_si128 (x0a, _mm_maskz_loadu_epi64 (2, tmpc_mac));
+        
+        P6_avx_first;
+        P6_avx_second;
+        
+        _mm_mask_storeu_epi64 (tmp, 2, x0a);
+        x0 = tmp[1];
+        _mm_mask_storeu_epi64 (tmp, 2, x1a);
+        x1 = tmp[1];
+        _mm_mask_storeu_epi64 (tmp, 2, x2a);
+        x2 = tmp[1];
+        _mm_mask_storeu_epi64 (tmp, 2, x3a);
+        x3 = tmp[1];
+        _mm_mask_storeu_epi64 (tmp, 2, x4a);
+        x4 = tmp[1];
+               
         x4 ^= domain_separation;
         
         //Save MAC state
@@ -461,8 +555,8 @@ void isap_mac_enc(
 
     // Absorb C
     while(rem_mac_bytes>=0){ 
-        tmpc_mac = 0; 
-        u8 *lane8 = (u8 *)&tmpc_mac;  
+        tmpc_mac[1] = 0; 
+        u8 *lane8 = (u8 *)&tmpc_mac[1];  
         for (u32 i = 0; i < 8; i++) { 
           if(i<(rem_mac_bytes)){ 
               lane8[i] = c[idx8_mac]; 
@@ -473,7 +567,7 @@ void isap_mac_enc(
               lane8[i] = 0x00; 
           } 
         } 
-        x0 ^= U64BIG(tmpc_mac);
+        x0 ^= U64BIG(tmpc_mac[1]);
         P12;
         rem_mac_bytes -= ISAP_rH_SZ;
     } 
