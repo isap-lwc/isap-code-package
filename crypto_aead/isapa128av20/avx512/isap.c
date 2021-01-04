@@ -74,10 +74,9 @@ const u8 ISAP_IV3[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_
 })
 
 #define ROUNDAVX(C1,C2) ({\
-    x2a =_mm_xor_si128 (x2a, _mm_set_epi64x (C1, C2));\
+    x2a = _mm_ternarylogic_epi64(x2a, _mm_set_epi64x (C1, C2), x1a, 0x96);\
     x0a =_mm_xor_si128 (x0a, x4a);\
     x4a =_mm_xor_si128 (x4a, x3a);\
-    x2a =_mm_xor_si128 (x2a, x1a);\
     t0a = x0a;\
     t4a = x4a;\
     t3a = x3a;\
@@ -89,34 +88,23 @@ const u8 ISAP_IV3[] = {0x03,ISAP_K,ISAP_rH,ISAP_rB,ISAP_sH,ISAP_sB,ISAP_sE,ISAP_
     x1a = _mm_ternarylogic_epi64(t1a, t2a, t3a, 0xd2);\
     x3a = _mm_ternarylogic_epi64(t3a, t4a, t0a, 0xd2);\
     x1a =_mm_xor_si128 (x1a, x0a);\
-    t1a  = x1a;\
-    x1a = _mm_ror_epi64(x1a, R[1][0]);\
     x3a =_mm_xor_si128 (x3a, x2a);\
-    t2a  = x2a;\
-    x2a = _mm_ror_epi64(x2a, R[2][0]);\
-    t4a  = x4a;\
-    t2a =_mm_xor_si128 (t2a, x2a);\
-    x2a = _mm_ror_epi64(x2a, R[2][1] - R[2][0]);\
-    t3a  = x3a;\
-    t1a =_mm_xor_si128 (t1a, x1a);\
-    x3a = _mm_ror_epi64(x3a, R[3][0]);\
     x0a =_mm_xor_si128 (x0a, x4a);\
-    x4a = _mm_ror_epi64(x4a, R[4][0]);\
-    t3a =_mm_xor_si128 (t3a, x3a);\
-    x2a =_mm_xor_si128 (x2a, t2a);\
-    x1a = _mm_ror_epi64(x1a, R[1][1] - R[1][0]);\
-    t0a  = x0a;\
-    x2a = _mm_xor_si128 (x2a, _mm_set_epi64x (~0ULL, ~0ULL));\
-    x3a = _mm_ror_epi64(x3a, R[3][1] - R[3][0]);\
-    t4a =_mm_xor_si128 (t4a, x4a);\
-    x4a = _mm_ror_epi64(x4a, R[4][1] - R[4][0]);\
-    x3a =_mm_xor_si128 (x3a, t3a);\
-    x1a =_mm_xor_si128 (x1a, t1a);\
-    x0a = _mm_ror_epi64(x0a, R[0][0]);\
-    x4a =_mm_xor_si128 (x4a, t4a);\
-    t0a =_mm_xor_si128 (t0a, x0a);\
-    x0a = _mm_ror_epi64(x0a, R[0][1] - R[0][0]);\
-    x0a =_mm_xor_si128 (x0a, t0a);\
+    t0a = _mm_ror_epi64(x0a, R[0][0]);\
+    t1a = _mm_ror_epi64(x0a, R[0][1]);\
+    t2a = _mm_ror_epi64(x1a, R[1][0]);\
+    t3a = _mm_ror_epi64(x1a, R[1][1]);\
+    x0a = _mm_ternarylogic_epi64(x0a, t0a, t1a, 0x96);\
+    x1a = _mm_ternarylogic_epi64(x1a, t2a, t3a, 0x96);\
+    t0a = _mm_ror_epi64(x2a, R[2][0]);\
+    t1a = _mm_ror_epi64(x2a, R[2][1]);\
+    t2a = _mm_ror_epi64(x3a, R[3][0]);\
+    t3a = _mm_ror_epi64(x3a, R[3][1]);\
+    x2a = _mm_ternarylogic_epi64(x2a, t0a, t1a, 0x69);\
+    x3a = _mm_ternarylogic_epi64(x3a, t2a, t3a, 0x96);\
+    t0a = _mm_ror_epi64(x4a, R[4][0]);\
+    t1a = _mm_ror_epi64(x4a, R[4][1]);\
+    x4a = _mm_ternarylogic_epi64(x4a, t0a, t1a, 0x96);\
 })
 
 #define P12 ({\
@@ -382,7 +370,7 @@ void isap_mac_enc(
     u64 x0, x1, x2, x3, x4;
     u64 t0, t1, t2, t3, t4;
     __m128i x0a, x1a, x2a, x3a, x4a;
-    __m128i  t0a, t1a, t2a, t3a, t4a;
+    __m128i t0a, t1a, t2a, t3a, t4a;
     t0 = t1 = t2 = t3 = t4 = 0;
     
     u8 state_enc[ISAP_STATE_SZ];
@@ -441,10 +429,9 @@ void isap_mac_enc(
     u32 idx8_enc = 0;
     u32 idx8_mac = 0; 
     u64 tmpc_mac[2];
-    u64 domain_separation[2] = {0,0x0000000000000001ULL};
+    __m128i domain_separation = _mm_set_epi64x (0x0000000000000001ULL, 0);
     long long rem_mac_bytes = clen; 
     do{
-    
         //prepare plaintext to encrypt
         tmpm1 = 0;
         tmpm2 = 0;
@@ -491,8 +478,8 @@ void isap_mac_enc(
         P6_avx_second;
         _mm_mask_storeu_epi64 (tmp, 1, x0a);
         tmpc2 = U64BIG(tmp[0]) ^ tmpm2;
-        x4a = _mm_xor_si128 (x4a, _mm_maskz_loadu_epi64 (2, domain_separation));
-        
+        x4a = _mm_xor_si128 (x4a, domain_separation);
+        domain_separation = _mm_andnot_si128 (domain_separation,domain_separation);
        
         
 
@@ -508,7 +495,6 @@ void isap_mac_enc(
             idx8_enc++;
         }
         rem_enc_bytes -= 2*ISAP_rH_SZ;
-        domain_separation[1] = 0;
         
     }while(rem_enc_bytes>0);
     //end encrypting
