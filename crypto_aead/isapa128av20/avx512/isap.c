@@ -424,7 +424,7 @@ void isap_mac_enc(
     u32 idx8_enc = 0;
     u32 idx8_mac = 0; 
     u64 tmpc_mac[2];
-    u64 domain_separation = 0x0000000000000001ULL;
+    u64 domain_separation[2] = {0,0x0000000000000001ULL};
     long long rem_mac_bytes = clen; 
     do{
     
@@ -473,36 +473,55 @@ void isap_mac_enc(
         x3 = U64BIG(state_mac64[3]);
         x4 = U64BIG(state_mac64[4]);
         
-        //x0 ^= tmpc_mac[1];
+        //Restore ENC state
+        t0 = U64BIG(state_enc64[0]);
+        t1 = U64BIG(state_enc64[1]);
+        t2 = U64BIG(state_enc64[2]);
+        t3 = U64BIG(state_enc64[3]);
+        t4 = U64BIG(state_enc64[4]);
+        
         
         u64 tmp[2];
         tmp[1] = x0;
-        x0a = _mm_mask_loadu_epi64 (x0a, 2, tmp);
+        tmp[0] = t0;
+        x0a = _mm_mask_loadu_epi64 (x0a, 3, tmp);
         tmp[1] = x1;
-        x1a = _mm_mask_loadu_epi64 (x1a, 2, tmp);
+        tmp[0] = t1;
+        x1a = _mm_mask_loadu_epi64 (x1a, 3, tmp);
         tmp[1] = x2;
-        x2a = _mm_mask_loadu_epi64 (x2a, 2, tmp);
+        tmp[0] = t2;
+        x2a = _mm_mask_loadu_epi64 (x2a, 3, tmp);
         tmp[1] = x3;
-        x3a = _mm_mask_loadu_epi64 (x3a, 2, tmp);
+        tmp[0] = t3;
+        x3a = _mm_mask_loadu_epi64 (x3a, 3, tmp);
         tmp[1] = x4;
-        x4a = _mm_mask_loadu_epi64 (x4a, 2, tmp);
+        tmp[0] = t4;
+        x4a = _mm_mask_loadu_epi64 (x4a, 3, tmp);
+        
         x0a = _mm_xor_si128 (x0a, _mm_maskz_loadu_epi64 (2, tmpc_mac));
-        
         P6_avx_first;
+        _mm_mask_storeu_epi64 (tmp, 1, x0a);
+        tmpc1 = U64BIG(tmp[0]) ^ tmpm1;
         P6_avx_second;
+        _mm_mask_storeu_epi64 (tmp, 1, x0a);
+        tmpc2 = U64BIG(tmp[0]) ^ tmpm2;
+        x4a = _mm_xor_si128 (x4a, _mm_maskz_loadu_epi64 (2, domain_separation));
         
-        _mm_mask_storeu_epi64 (tmp, 2, x0a);
+        _mm_mask_storeu_epi64 (tmp, 3, x0a);
         x0 = tmp[1];
-        _mm_mask_storeu_epi64 (tmp, 2, x1a);
+        t0 = tmp[0];
+        _mm_mask_storeu_epi64 (tmp, 3, x1a);
         x1 = tmp[1];
-        _mm_mask_storeu_epi64 (tmp, 2, x2a);
+        t1 = tmp[0];
+        _mm_mask_storeu_epi64 (tmp, 3, x2a);
         x2 = tmp[1];
-        _mm_mask_storeu_epi64 (tmp, 2, x3a);
+        t2 = tmp[0];
+        _mm_mask_storeu_epi64 (tmp, 3, x3a);
         x3 = tmp[1];
-        _mm_mask_storeu_epi64 (tmp, 2, x4a);
+        t3 = tmp[0];
+        _mm_mask_storeu_epi64 (tmp, 3, x4a);
         x4 = tmp[1];
-               
-        x4 ^= domain_separation;
+        t4 = tmp[0];
         
         //Save MAC state
         state_mac64[0] = U64BIG(x0);
@@ -511,22 +530,14 @@ void isap_mac_enc(
         state_mac64[3] = U64BIG(x3);
         state_mac64[4] = U64BIG(x4);
         
+        //Save ENC state
+        state_enc64[0] = U64BIG(t0);
+        state_enc64[1] = U64BIG(t1);
+        state_enc64[2] = U64BIG(t2);
+        state_enc64[3] = U64BIG(t3);
+        state_enc64[4] = U64BIG(t4);
         
-        //perms for encryption
-        x0 = U64BIG(state_enc64[0]);
-        x1 = U64BIG(state_enc64[1]);
-        x2 = U64BIG(state_enc64[2]);
-        x3 = U64BIG(state_enc64[3]);
-        x4 = U64BIG(state_enc64[4]);
-        P6;
-        tmpc1 = U64BIG(x0) ^ tmpm1;
-        P6;
-        tmpc2 = U64BIG(x0) ^ tmpm2;
-        state_enc64[0] = U64BIG(x0);
-        state_enc64[1] = U64BIG(x1);
-        state_enc64[2] = U64BIG(x2);
-        state_enc64[3] = U64BIG(x3);
-        state_enc64[4] = U64BIG(x4);
+        
 
         // Squeeze  lane 
         u8 *lane8 = (u8 *)&tmpc1;
@@ -540,7 +551,7 @@ void isap_mac_enc(
             idx8_enc++;
         }
         rem_enc_bytes -= 2*ISAP_rH_SZ;
-        domain_separation = 0;
+        domain_separation[1] = 0;
         
     }while(rem_enc_bytes>0);
     //end encrypting
