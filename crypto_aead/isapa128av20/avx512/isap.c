@@ -405,18 +405,35 @@ void isap_mac_enc(
     // Absorb AD
     ABSORB_LANES(ad,adlen);
     
-    //Save MAC state
-    state_mac64[0] = U64BIG(x0);
-    state_mac64[1] = U64BIG(x1);
-    state_mac64[2] = U64BIG(x2);
-    state_mac64[3] = U64BIG(x3);
-    state_mac64[4] = U64BIG(x4);
-    
-    
+        
+   //Initialize AVX registers
+   t0 = U64BIG(state_enc64[0]);
+   t1 = U64BIG(state_enc64[1]);
+   t2 = U64BIG(state_enc64[2]);
+   t3 = U64BIG(state_enc64[3]);
+   t4 = U64BIG(state_enc64[4]);
+        
+        
+   u64 tmp[2];
+   tmp[1] = x0;
+   tmp[0] = t0;
+   x0a = _mm_maskz_loadu_epi64 (3, tmp);
+   tmp[1] = x1;
+   tmp[0] = t1;
+   x1a = _mm_maskz_loadu_epi64 (3, tmp);
+   tmp[1] = x2;
+   tmp[0] = t2;
+   x2a = _mm_maskz_loadu_epi64 (3, tmp);
+   tmp[1] = x3;
+   tmp[0] = t3;
+   x3a = _mm_maskz_loadu_epi64 (3, tmp);
+   tmp[1] = x4;
+   tmp[0] = t4;
+   x4a = _mm_maskz_loadu_epi64 (3, tmp);
     
 
 
-    // Squeeze key stream
+    // Squeeze key stream while absorbing ciphertext
     long long rem_enc_bytes = mlen;
     u64 tmpc1,tmpc2;
     u64 tmpm1,tmpm2;
@@ -466,37 +483,6 @@ void isap_mac_enc(
         }
         
         
-        //Restore MAC state
-        x0 = U64BIG(state_mac64[0]);
-        x1 = U64BIG(state_mac64[1]);
-        x2 = U64BIG(state_mac64[2]);
-        x3 = U64BIG(state_mac64[3]);
-        x4 = U64BIG(state_mac64[4]);
-        
-        //Restore ENC state
-        t0 = U64BIG(state_enc64[0]);
-        t1 = U64BIG(state_enc64[1]);
-        t2 = U64BIG(state_enc64[2]);
-        t3 = U64BIG(state_enc64[3]);
-        t4 = U64BIG(state_enc64[4]);
-        
-        
-        u64 tmp[2];
-        tmp[1] = x0;
-        tmp[0] = t0;
-        x0a = _mm_mask_loadu_epi64 (x0a, 3, tmp);
-        tmp[1] = x1;
-        tmp[0] = t1;
-        x1a = _mm_mask_loadu_epi64 (x1a, 3, tmp);
-        tmp[1] = x2;
-        tmp[0] = t2;
-        x2a = _mm_mask_loadu_epi64 (x2a, 3, tmp);
-        tmp[1] = x3;
-        tmp[0] = t3;
-        x3a = _mm_mask_loadu_epi64 (x3a, 3, tmp);
-        tmp[1] = x4;
-        tmp[0] = t4;
-        x4a = _mm_mask_loadu_epi64 (x4a, 3, tmp);
         
         x0a = _mm_xor_si128 (x0a, _mm_maskz_loadu_epi64 (2, tmpc_mac));
         P6_avx_first;
@@ -507,36 +493,7 @@ void isap_mac_enc(
         tmpc2 = U64BIG(tmp[0]) ^ tmpm2;
         x4a = _mm_xor_si128 (x4a, _mm_maskz_loadu_epi64 (2, domain_separation));
         
-        _mm_mask_storeu_epi64 (tmp, 3, x0a);
-        x0 = tmp[1];
-        t0 = tmp[0];
-        _mm_mask_storeu_epi64 (tmp, 3, x1a);
-        x1 = tmp[1];
-        t1 = tmp[0];
-        _mm_mask_storeu_epi64 (tmp, 3, x2a);
-        x2 = tmp[1];
-        t2 = tmp[0];
-        _mm_mask_storeu_epi64 (tmp, 3, x3a);
-        x3 = tmp[1];
-        t3 = tmp[0];
-        _mm_mask_storeu_epi64 (tmp, 3, x4a);
-        x4 = tmp[1];
-        t4 = tmp[0];
-        
-        //Save MAC state
-        state_mac64[0] = U64BIG(x0);
-        state_mac64[1] = U64BIG(x1);
-        state_mac64[2] = U64BIG(x2);
-        state_mac64[3] = U64BIG(x3);
-        state_mac64[4] = U64BIG(x4);
-        
-        //Save ENC state
-        state_enc64[0] = U64BIG(t0);
-        state_enc64[1] = U64BIG(t1);
-        state_enc64[2] = U64BIG(t2);
-        state_enc64[3] = U64BIG(t3);
-        state_enc64[4] = U64BIG(t4);
-        
+       
         
 
         // Squeeze  lane 
@@ -556,15 +513,21 @@ void isap_mac_enc(
     }while(rem_enc_bytes>0);
     //end encrypting
     
-    //Restore MAC state
-    x0 = U64BIG(state_mac64[0]);
-    x1 = U64BIG(state_mac64[1]);
-    x2 = U64BIG(state_mac64[2]);
-    x3 = U64BIG(state_mac64[3]);
-    x4 = U64BIG(state_mac64[4]);
     
+    //Restore MAC state
+    _mm_mask_storeu_epi64 (tmp, 2, x0a);
+    x0 = tmp[1];
+    _mm_mask_storeu_epi64 (tmp, 2, x1a);
+    x1 = tmp[1];
+    _mm_mask_storeu_epi64 (tmp, 2, x2a);
+    x2 = tmp[1];
+    _mm_mask_storeu_epi64 (tmp, 2, x3a);
+    x3 = tmp[1];
+    _mm_mask_storeu_epi64 (tmp, 2, x4a);
+    x4 = tmp[1];
+  
 
-    // Absorb C
+    // Absorb  rest of C
     while(rem_mac_bytes>=0){ 
         tmpc_mac[1] = 0; 
         u8 *lane8 = (u8 *)&tmpc_mac[1];  
