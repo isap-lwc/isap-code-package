@@ -1,5 +1,6 @@
 #include "api.h"
 #include "isap.h"
+#include "crypto_aead.h"
 
 int crypto_aead_encrypt(
 	unsigned char *c, unsigned long long *clen,
