@@ -268,7 +268,7 @@ void isap_enc(
             // Squeeze full lane and continue
             union State temp;
             temp.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,m+idx));
-            _mm512_mask_storeu_epi16 (c+idx, 0x3ffff, temp.S);
+            _mm512_mask_storeu_epi8 (c+idx, 0x3ffff, temp.S);
             idx += ISAP_rH_SZ;
             rem_bytes -= ISAP_rH_SZ;
             PermuteRoundsEX;
@@ -276,7 +276,7 @@ void isap_enc(
             // Squeeze full lane and stop
             union State temp;
             temp.S = _mm512_xor_epi64 (S.S, _mm512_maskz_loadu_epi8(0x3ffff,m+idx));
-            _mm512_mask_storeu_epi16 (c+idx, 0x3ffff, temp.S);
+            _mm512_mask_storeu_epi8 (c+idx, 0x3ffff, temp.S);
             break;
         } else {
             // Squeeze partial lane and stop
