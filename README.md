@@ -4,7 +4,7 @@ ISAP is a family of lightweight authenticated encryption algorithms designed wit
 
 This repository contains the following ISAP algorithms:
 
-- `crypto_aead/isapa128av20`: ISAP-A-128a v2.0
+- `crypto_aead/isapa128av20`: ISAP-A-128a v2.0 (primary recommendation)
 - `crypto_aead/isapa128v20`: ISAP-A-128 v2.0
 - `crypto_aead/isapk128av20`: ISAP-K-128a v2.0
 - `crypto_aead/isapk128v20`: ISAP-K-128 v2.0

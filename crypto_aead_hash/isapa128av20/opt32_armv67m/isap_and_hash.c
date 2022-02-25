@@ -1,15 +1,16 @@
+#include <string.h>
 #include "api.h"
 #include "isap.h"
-#include "asconp.h"
+#include "asconp_opt32_armv67m.h"
 
+// ISAP-A-128a
 const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-
-#define P_sB PX(1,&x0,&x1,&x2,&x3,&x4)
-#define P_sE PX(6,&x0,&x1,&x2,&x3,&x4)
-#define P_sH PX(12,&x0,&x1,&x2,&x3,&x4)
-#define P_sK PX(12,&x0,&x1,&x2,&x3,&x4)
+#define P_sB P_1(&x0, &x1, &x2, &x3, &x4)
+#define P_sE P_6(&x0, &x1, &x2, &x3, &x4)
+#define P_sH P_12(&x0, &x1, &x2, &x3, &x4)
+#define P_sK P_12(&x0, &x1, &x2, &x3, &x4)
 
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
@@ -20,7 +21,7 @@ void isap_rk(
     const u8 *iv,
     const u8 *y,
     u8 *out,
-    const u8 outlen)
+    const u32 outlen)
 {
     // State variables
     u32_2 x0, x1, x2, x3, x4;
@@ -36,15 +37,30 @@ void isap_rk(
     P_sK;
 
     // Absorb Y, bit by bit
-    for (u8 i = 0; i < 127; i++) {
-        u8 cur_byte_pos = i / 8;
-        u8 cur_bit_pos = 7 - (i % 8);
-        u32 cur_bit = ((y[cur_byte_pos] >> (cur_bit_pos)) & 0x01) << 7;
-        x0.o ^= ((u32)cur_bit) << 24;
+    for (u8 i = 0; i < 16; i++)
+    {
+        u32 cur_byte = *y;
+        x0.o ^= (cur_byte & 0x80) << 24;
         P_sB;
+        x0.o ^= (cur_byte & 0x40) << 25;
+        P_sB;
+        x0.o ^= (cur_byte & 0x20) << 26;
+        P_sB;
+        x0.o ^= (cur_byte & 0x10) << 27;
+        P_sB;
+        x0.o ^= (cur_byte & 0x08) << 28;
+        P_sB;
+        x0.o ^= (cur_byte & 0x04) << 29;
+        P_sB;
+        x0.o ^= (cur_byte & 0x02) << 30;
+        P_sB;
+        x0.o ^= (cur_byte & 0x01) << 31;
+        if (i != 15)
+        {
+            P_sB;
+            y += 1;
+        }
     }
-    u8 cur_bit = ((y[15]) & 0x01) << 7;
-    x0.o ^= ((u32)cur_bit) << (24);
 
     // Squeeze - Derive K*
     P_sK;
@@ -52,7 +68,8 @@ void isap_rk(
     *(u32 *)(out + 4) = x0.e;
     *(u32 *)(out + 8) = x1.o;
     *(u32 *)(out + 12) = x1.e;
-    if (outlen > 16) {
+    if (outlen > 16)
+    {
         *(u32 *)(out + 16) = x2.o;
         *(u32 *)(out + 20) = x2.e;
     }
@@ -175,9 +192,11 @@ void isap_mac(
     x1.e = ka_star32[3];
     P_sH;
     from_bit_interleaving(&tmp0, x0);
-    *(u64 *)(tag + 0) = U64BIG(tmp0);
+    tmp0 = U64BIG(tmp0);
+    memcpy(tag + 0, (u8 *)(&tmp0), 8);
     from_bit_interleaving(&tmp0, x1);
-    *(u64 *)(tag + 8) = U64BIG(tmp0);
+    tmp0 = U64BIG(tmp0);
+    memcpy(tag + 8, (u8 *)(&tmp0), 8);
 }
 
 /******************************************************************************/
@@ -231,6 +250,89 @@ void isap_enc(
             *c = *m ^ tmp0_bytes[i];
             m += 1;
             c += 1;
+        }
+    }
+}
+
+/******************************************************************************/
+/*                                Ascon-Hash                                  */
+/******************************************************************************/
+
+// Ascon-Hash
+const u8 ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
+#define P_a P_12(&x0, &x1, &x2, &x3, &x4)
+#define P_b P_12(&x0, &x1, &x2, &x3, &x4)
+
+void crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
+{
+    // State and temporary variables
+    u32_2 x0, x1, x2, x3, x4;
+    u32_2 t0;
+    u64 tmp0;
+
+    // Initialize
+    to_bit_interleaving(&x0, U64BIG(*(u64 *)ASCON_HASH_IV + 0));
+    x1.o = 0;
+    x1.e = 0;
+    x2.o = 0;
+    x2.e = 0;
+    x3.o = 0;
+    x3.e = 0;
+    x4.o = 0;
+    x4.e = 0;
+    P_a;
+
+    // Absorb full lanes of input
+    while (inlen >= 8)
+    {
+        to_bit_interleaving(&t0, U64BIG(*(u64 *)in));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        inlen -= ISAP_rH / 8;
+        in += ISAP_rH / 8;
+        if (inlen < 8)
+        {
+            P_a;
+        }
+        else
+        {
+            P_b;
+        }
+    }
+
+    // Absorb partial lane of AD and add padding
+    if (inlen > 0)
+    {
+        tmp0 = 0;
+        u8 *tmp0_bytes = (u8 *)&tmp0;
+        u8 i;
+        for (i = 0; i < inlen; i++)
+        {
+            tmp0_bytes[i] = *in;
+            in += 1;
+        }
+        tmp0_bytes[i] = 0x80;
+        to_bit_interleaving(&t0, U64BIG(tmp0));
+        x0.e ^= t0.e;
+        x0.o ^= t0.o;
+        P_a;
+    }
+
+    // Absorb AD padding if not already done before
+    if (inlen == 0)
+    {
+        x0.o ^= 0x80000000;
+        P_a;
+    }
+
+    // Squeeze full lanes
+    for (size_t i = 0; i < 4; i++)
+    {
+        from_bit_interleaving(&tmp0, x0);
+        *(((u64 *)out) + i) = U64BIG(tmp0);
+        if (i < 3)
+        {
+            P_b;
         }
     }
 }

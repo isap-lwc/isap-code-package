@@ -1,18 +1,16 @@
+#include <string.h>
 #include "api.h"
 #include "isap.h"
-#include "asconp.h"
+#include "asconp_opt32.h"
 
+// ISAP-A-128a
 const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-
-#define P_sB_UROL P_1()
-#define P_sE P_LOOP(6)
-#define P_sE_UROL P_6()
-#define P_sH P_LOOP(12)
-#define P_sH_UROL P_12()
-#define P_sK P_LOOP(12)
-#define P_sK_UROL P_12()
+#define P_sB P_1(&x0, &x1, &x2, &x3, &x4)
+#define P_sE P_6(&x0, &x1, &x2, &x3, &x4)
+#define P_sH P_12(&x0, &x1, &x2, &x3, &x4)
+#define P_sK P_12(&x0, &x1, &x2, &x3, &x4)
 
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
@@ -43,23 +41,23 @@ void isap_rk(
     {
         u32 cur_byte = *y;
         x0.o ^= (cur_byte & 0x80) << 24;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x40) << 25;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x20) << 26;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x10) << 27;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x08) << 28;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x04) << 29;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x02) << 30;
-        P_sB_UROL;
+        P_sB;
         x0.o ^= (cur_byte & 0x01) << 31;
         if (i != 15)
         {
-            P_sB_UROL;
+            P_sB;
             y += 1;
         }
     }
@@ -111,7 +109,7 @@ void isap_mac(
         x0.o ^= t0.o;
         adlen -= ISAP_rH / 8;
         ad += ISAP_rH / 8;
-        P_sH_UROL;
+        P_sH;
     }
 
     // Absorb partial lane of AD and add padding
@@ -148,7 +146,7 @@ void isap_mac(
         to_bit_interleaving(&t0, U64BIG(*(u64 *)c));
         x0.e ^= t0.e;
         x0.o ^= t0.o;
-        P_sH_UROL;
+        P_sH;
         clen -= ISAP_rH / 8;
         c += ISAP_rH / 8;
     }
@@ -194,9 +192,11 @@ void isap_mac(
     x1.e = ka_star32[3];
     P_sH;
     from_bit_interleaving(&tmp0, x0);
-    *(u64 *)(tag + 0) = U64BIG(tmp0);
+    tmp0 = U64BIG(tmp0);
+    memcpy(tag + 0, (u8 *)(&tmp0), 8);
     from_bit_interleaving(&tmp0, x1);
-    *(u64 *)(tag + 8) = U64BIG(tmp0);
+    tmp0 = U64BIG(tmp0);
+    memcpy(tag + 8, (u8 *)(&tmp0), 8);
 }
 
 /******************************************************************************/
@@ -230,7 +230,7 @@ void isap_enc(
     // Squeeze full lanes
     while (mlen >= 8)
     {
-        P_sE_UROL;
+        P_sE;
         from_bit_interleaving(&tmp0, x0);
         *(u64 *)c = *(u64 *)m ^ U64BIG(tmp0);
         mlen -= 8;
@@ -253,3 +253,4 @@ void isap_enc(
         }
     }
 }
+

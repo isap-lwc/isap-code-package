@@ -29,6 +29,8 @@
 // copyright protection within the United States.
 //
 
+// This code was modified such that it only performs one end/dec computation.
+
 // disable deprecation for sprintf and fopen
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
