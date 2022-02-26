@@ -15,7 +15,7 @@
 #define ISAP_STATE_SZ 40
 
 // Size of rate in bytes
-#define ISAP_rH_SZ ((ISAP_rH+7)/8)
+#define ISAP_rH_SZ ((ISAP_rH + 7) / 8)
 
 // Size of zero truncated IV in bytes
 #define ISAP_IV_SZ 8
@@ -31,14 +31,12 @@ void isap_mac(
 	const unsigned char *npub,
 	const unsigned char *ad, const unsigned long long adlen,
 	const unsigned char *c, const unsigned long long clen,
-	unsigned char *tag
-);
+	unsigned char *tag);
 
 void isap_enc(
 	const unsigned char *k,
 	const unsigned char *npub,
 	const unsigned char *m, const unsigned long long mlen,
-	unsigned char *c
-);
+	unsigned char *c);
 
 #endif // ISAP_H_

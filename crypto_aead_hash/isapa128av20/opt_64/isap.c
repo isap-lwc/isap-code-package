@@ -188,10 +188,8 @@ void isap_enc(
 
 // Ascon-Hash
 const u8 ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
-#define P_a P12(s)
-#define P_b P12(s)
 
-void crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
+int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
 {
     state_t state;
     state_t *s = &state;
@@ -202,49 +200,20 @@ void crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long
     s->x[2] = 0;
     s->x[3] = 0;
     s->x[4] = 0;
-    P_a;
+    P_sH;
 
-    // Absorb full lanes of input
-    while (inlen >= 8)
-    {
-        s->x[0] ^= U64BIG(*(u64 *)in);
-        inlen -= 8;
-        in += 8;
-        if (inlen < 8)
-        {
-            P_a;
-        }
-        else
-        {
-            P_b;
-        }
-    }
-
-    // Absorb partial lane of input and add padding
-    if (inlen > 0)
-    {
-        u64 i;
-        for (i = 0; i < inlen; i++)
-        {
-            s->b[0][7 - i] ^= *in;
-            in += 1;
-        }
-        s->b[0][7 - i] ^= 0x80;
-        P_a;
-    }
-    else
-    {
-        s->b[0][7] ^= 0x80;
-        P_a;
-    }
+    ABSORB_LANES(s, in, inlen);
 
     // Squeeze full lanes
     for (size_t i = 0; i < 4; i++)
     {
-        ((u64 *)out)[i] = U64BIG(s->x[0]);
+        *(u64 *)out = U64BIG(s->x[0]);
+        out += 8;
         if (i < 3)
         {
-            P_b;
+            P_sH;
         }
     }
+
+    return 0;
 }
