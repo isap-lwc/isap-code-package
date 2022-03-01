@@ -1,60 +1,97 @@
 #include <string.h>
+#include <inttypes.h>
 #include "api.h"
 #include "isap.h"
 #include "asconp_opt32.h"
 
 // ISAP-A-128a
-const u8 ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const u8 ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const u8 ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-#define P_sB P_1(&x0, &x1, &x2, &x3, &x4)
-#define P_sE P_6(&x0, &x1, &x2, &x3, &x4)
-#define P_sH P_12(&x0, &x1, &x2, &x3, &x4)
-#define P_sK P_12(&x0, &x1, &x2, &x3, &x4)
+const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+#define P_sB P1ROUNDS(s)
+#define P_sE P6ROUNDS(s)
+#define P_sK P12ROUNDS(s)
+#define P_sH P12ROUNDS(s)
+
+forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
+{
+    lane_t t0;
+    while (len >= 8)
+    {
+        // Absorb full lanes
+        to_bit_interleaving(&t0, U64BIG(*(lane_t *)src));
+        s->w[0][0] ^= t0.w[0];
+        s->w[0][1] ^= t0.w[1];
+        len -= ISAP_rH / 8;
+        src += ISAP_rH / 8;
+        P_sH;
+    }
+
+    if (len > 0)
+    {
+        // Absorb partial lanes
+        size_t i;
+        lane_t t1 = {0};
+        for (i = 0; i < len; i++)
+        {
+            t1.b[7 - i] ^= *src;
+            src++;
+        }
+        t1.b[7 - i] ^= 0x80;
+        to_bit_interleaving(&t1, t1);
+        s->w[0][0] ^= t1.w[0];
+        s->w[0][1] ^= t1.w[1];
+        P_sH;
+    }
+    else
+    {
+        // Absorb empty lane (padding)
+        s->b[0][7] ^= 0x80;
+        P_sH;
+    }
+}
 
 /******************************************************************************/
 /*                                 ISAP_RK                                    */
 /******************************************************************************/
 
 void isap_rk(
-    const u8 *k,
-    const u8 *iv,
-    const u8 *y,
-    u8 *out,
-    const u32 outlen)
+    const uint8_t *k,
+    const uint8_t *iv,
+    const uint8_t *y,
+    state_t *out,
+    const size_t outlen)
 {
-    // State variables
-    u32_2 x0, x1, x2, x3, x4;
+    state_t state;
+    state_t *s = &state;
 
-    // Initialize
-    to_bit_interleaving(&x0, U64BIG(*(u64 *)(k + 0)));
-    to_bit_interleaving(&x1, U64BIG(*(u64 *)(k + 8)));
-    to_bit_interleaving(&x2, U64BIG(*(u64 *)(iv + 0)));
-    x3.o = 0;
-    x3.e = 0;
-    x4.o = 0;
-    x4.e = 0;
+    // Init state
+    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(k + 0)));
+    to_bit_interleaving(s->l + 1, U64BIG(*(lane_t *)(k + 8)));
+    to_bit_interleaving(s->l + 2, U64BIG(*(lane_t *)(iv + 0)));
+    s->x[3] = 0;
+    s->x[4] = 0;
     P_sK;
 
     // Absorb Y, bit by bit
-    for (u8 i = 0; i < 16; i++)
+    for (size_t i = 0; i < 16; i++)
     {
-        u32 cur_byte = *y;
-        x0.o ^= (cur_byte & 0x80) << 24;
+        uint32_t cur_byte = *y;
+        s->w[0][1] ^= (cur_byte & 0x80) << 24;
         P_sB;
-        x0.o ^= (cur_byte & 0x40) << 25;
+        s->w[0][1] ^= (cur_byte & 0x40) << 25;
         P_sB;
-        x0.o ^= (cur_byte & 0x20) << 26;
+        s->w[0][1] ^= (cur_byte & 0x20) << 26;
         P_sB;
-        x0.o ^= (cur_byte & 0x10) << 27;
+        s->w[0][1] ^= (cur_byte & 0x10) << 27;
         P_sB;
-        x0.o ^= (cur_byte & 0x08) << 28;
+        s->w[0][1] ^= (cur_byte & 0x08) << 28;
         P_sB;
-        x0.o ^= (cur_byte & 0x04) << 29;
+        s->w[0][1] ^= (cur_byte & 0x04) << 29;
         P_sB;
-        x0.o ^= (cur_byte & 0x02) << 30;
+        s->w[0][1] ^= (cur_byte & 0x02) << 30;
         P_sB;
-        x0.o ^= (cur_byte & 0x01) << 31;
+        s->w[0][1] ^= (cur_byte & 0x01) << 31;
         if (i != 15)
         {
             P_sB;
@@ -62,16 +99,13 @@ void isap_rk(
         }
     }
 
-    // Squeeze - Derive K*
+    // Squeeze K*
     P_sK;
-    *(u32 *)(out + 0) = x0.o;
-    *(u32 *)(out + 4) = x0.e;
-    *(u32 *)(out + 8) = x1.o;
-    *(u32 *)(out + 12) = x1.e;
+    out->x[0] = s->x[0];
+    out->x[1] = s->x[1];
     if (outlen > 16)
     {
-        *(u32 *)(out + 16) = x2.o;
-        *(u32 *)(out + 20) = x2.e;
+        out->x[2] = s->x[2];
     }
 }
 
@@ -80,123 +114,46 @@ void isap_rk(
 /******************************************************************************/
 
 void isap_mac(
-    const u8 *k,
-    const u8 *npub,
-    const u8 *ad, u64 adlen,
-    const u8 *c, u64 clen,
-    u8 *tag)
+    const uint8_t *k,
+    const uint8_t *npub,
+    const uint8_t *ad, uint64_t adlen,
+    const uint8_t *c, uint64_t clen,
+    uint8_t *tag)
 {
-    // State and temporary variables
-    u32_2 x0, x1, x2, x3, x4;
-    u32_2 t0;
-    u64 tmp0;
+    lane_t t0;
+    state_t state;
+    state_t *s = &state;
 
     // Initialize
-    to_bit_interleaving(&x0, U64BIG(*(u64 *)npub + 0));
-    to_bit_interleaving(&x1, U64BIG(*(u64 *)(npub + 8)));
-    to_bit_interleaving(&x2, U64BIG(*(u64 *)(ISAP_IV_A)));
-    x3.o = 0;
-    x3.e = 0;
-    x4.o = 0;
-    x4.e = 0;
+    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(npub + 0)));
+    to_bit_interleaving(s->l + 1, U64BIG(*(lane_t *)(npub + 8)));
+    to_bit_interleaving(s->l + 2, U64BIG(*(lane_t *)(ISAP_IV_A + 0)));
+    s->x[3] = 0;
+    s->x[4] = 0;
     P_sH;
 
-    // Absorb full lanes of AD
-    while (adlen >= 8)
-    {
-        to_bit_interleaving(&t0, U64BIG(*(u64 *)ad));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        adlen -= ISAP_rH / 8;
-        ad += ISAP_rH / 8;
-        P_sH;
-    }
+    ABSORB_LANES(s, ad, adlen);
 
-    // Absorb partial lane of AD and add padding
-    if (adlen > 0)
-    {
-        tmp0 = 0;
-        u8 *tmp0_bytes = (u8 *)&tmp0;
-        u8 i;
-        for (i = 0; i < adlen; i++)
-        {
-            tmp0_bytes[i] = *ad;
-            ad += 1;
-        }
-        tmp0_bytes[i] = 0x80;
-        to_bit_interleaving(&t0, U64BIG(tmp0));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        P_sH;
-    }
+    // Domain seperation
+    s->w[4][0] ^= 0x1UL;
 
-    // Absorb AD padding if not already done before
-    if (adlen == 0)
-    {
-        x0.o ^= 0x80000000;
-        P_sH;
-    }
+    ABSORB_LANES(s, c, clen);
 
-    // Domain Seperation
-    x4.e ^= ((u32)0x01);
+    // Derive KA*
+    from_bit_interleaving(&t0, s->l[0]);
+    s->l[0] = U64BIG(t0);
+    from_bit_interleaving(&t0, s->l[1]);
+    s->l[1] = U64BIG(t0);
+    isap_rk(k, ISAP_IV_KA, (const uint8_t *)(s->b), s, CRYPTO_KEYBYTES);
 
-    // Absorb full lanes of C
-    while (clen >= 8)
-    {
-        to_bit_interleaving(&t0, U64BIG(*(u64 *)c));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        P_sH;
-        clen -= ISAP_rH / 8;
-        c += ISAP_rH / 8;
-    }
-
-    // Absorb partial lane of C and add padding
-    if (clen > 0)
-    {
-        tmp0 = 0;
-        u8 *tmp0_bytes = (u8 *)&tmp0;
-        u8 i;
-        for (i = 0; i < clen; i++)
-        {
-            tmp0_bytes[i] = *c;
-            c += 1;
-        }
-        tmp0_bytes[i] = 0x80;
-        to_bit_interleaving(&t0, U64BIG(tmp0));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        P_sH;
-    }
-
-    // Absorb C padding if not already done before
-    if (clen == 0)
-    {
-        x0.o ^= 0x80000000;
-        P_sH;
-    }
-
-    // Finalize - Derive Ka*
-    u64 y64[CRYPTO_KEYBYTES / 8];
-    from_bit_interleaving(&tmp0, x0);
-    y64[0] = U64BIG(tmp0);
-    from_bit_interleaving(&tmp0, x1);
-    y64[1] = U64BIG(tmp0);
-    u32 ka_star32[CRYPTO_KEYBYTES / 4];
-    isap_rk(k, ISAP_IV_KA, (u8 *)y64, (u8 *)ka_star32, CRYPTO_KEYBYTES);
-
-    // Finalize - Squeeze T
-    x0.o = ka_star32[0];
-    x0.e = ka_star32[1];
-    x1.o = ka_star32[2];
-    x1.e = ka_star32[3];
+    // Create tag
     P_sH;
-    from_bit_interleaving(&tmp0, x0);
-    tmp0 = U64BIG(tmp0);
-    memcpy(tag + 0, (u8 *)(&tmp0), 8);
-    from_bit_interleaving(&tmp0, x1);
-    tmp0 = U64BIG(tmp0);
-    memcpy(tag + 8, (u8 *)(&tmp0), 8);
+    from_bit_interleaving(&t0, s->l[0]);
+    t0 = U64BIG(t0);
+    memcpy(tag + 0, t0.b, 8);
+    from_bit_interleaving(&t0, s->l[1]);
+    t0 = U64BIG(t0);
+    memcpy(tag + 8, t0.b, 8);
 }
 
 /******************************************************************************/
@@ -204,48 +161,40 @@ void isap_mac(
 /******************************************************************************/
 
 void isap_enc(
-    const u8 *k,
-    const u8 *npub,
-    const u8 *m, u64 mlen,
-    u8 *c)
+    const uint8_t *k,
+    const uint8_t *npub,
+    const uint8_t *m, uint64_t mlen,
+    uint8_t *c)
+
 {
-    // Derive Ke
-    u8 ke[ISAP_STATE_SZ - CRYPTO_NPUBBYTES];
-    isap_rk(k, ISAP_IV_KE, npub, ke, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+    state_t state;
+    state_t *s = &state;
 
-    // State and temporary variables
-    u32_2 x0, x1, x2, x3, x4;
-    u64 tmp0;
+    // Init state
+    isap_rk(k, ISAP_IV_KE, npub, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+    to_bit_interleaving(s->l + 3, U64BIG(*(lane_t *)(npub + 0)));
+    to_bit_interleaving(s->l + 4, U64BIG(*(lane_t *)(npub + 8)));
 
-    // Init State
-    x0.o = *(u32 *)(ke + 0);
-    x0.e = *(u32 *)(ke + 4);
-    x1.o = *(u32 *)(ke + 8);
-    x1.e = *(u32 *)(ke + 12);
-    x2.o = *(u32 *)(ke + 16);
-    x2.e = *(u32 *)(ke + 20);
-    to_bit_interleaving(&x3, U64BIG(*(u64 *)npub));
-    to_bit_interleaving(&x4, U64BIG(*(u64 *)(npub + 8)));
-
-    // Squeeze full lanes
-    while (mlen >= 8)
+    lane_t t0;
+    while (mlen >= ISAP_rH / 8)
     {
+        // Squeeze full lanes
         P_sE;
-        from_bit_interleaving(&tmp0, x0);
-        *(u64 *)c = *(u64 *)m ^ U64BIG(tmp0);
-        mlen -= 8;
+        from_bit_interleaving(&t0, s->l[0]);
+        *(uint64_t *)c = *(uint64_t *)m ^ U64BIG(t0).x;
+        mlen -= ISAP_rH / 8;
         m += ISAP_rH / 8;
         c += ISAP_rH / 8;
     }
 
-    // Squeeze partial lane
     if (mlen > 0)
     {
+        // Squeeze partial lane
         P_sE;
-        from_bit_interleaving(&tmp0, x0);
-        tmp0 = U64BIG(tmp0);
-        u8 *tmp0_bytes = (u8 *)&tmp0;
-        for (u8 i = 0; i < mlen; i++)
+        from_bit_interleaving(&t0, s->l[0]);
+        t0 = U64BIG(t0);
+        uint8_t *tmp0_bytes = (uint8_t *)&t0;
+        for (uint8_t i = 0; i < mlen; i++)
         {
             *c = *m ^ tmp0_bytes[i];
             m += 1;
@@ -258,81 +207,33 @@ void isap_enc(
 /*                                Ascon-Hash                                  */
 /******************************************************************************/
 
-// Ascon-Hash
-const u8 ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
-#define P_a P_12(&x0, &x1, &x2, &x3, &x4)
-#define P_b P_12(&x0, &x1, &x2, &x3, &x4)
+const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
 
-void crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
+void crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
 {
-    // State and temporary variables
-    u32_2 x0, x1, x2, x3, x4;
-    u32_2 t0;
-    u64 tmp0;
+
+    state_t state;
+    state_t *s = &state;
 
     // Initialize
-    to_bit_interleaving(&x0, U64BIG(*(u64 *)ASCON_HASH_IV + 0));
-    x1.o = 0;
-    x1.e = 0;
-    x2.o = 0;
-    x2.e = 0;
-    x3.o = 0;
-    x3.e = 0;
-    x4.o = 0;
-    x4.e = 0;
-    P_a;
+    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(ASCON_HASH_IV)));
+    s->x[1] = 0;
+    s->x[2] = 0;
+    s->x[3] = 0;
+    s->x[4] = 0;
+    P_sH;
 
-    // Absorb full lanes of input
-    while (inlen >= 8)
-    {
-        to_bit_interleaving(&t0, U64BIG(*(u64 *)in));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        inlen -= ISAP_rH / 8;
-        in += ISAP_rH / 8;
-        if (inlen < 8)
-        {
-            P_a;
-        }
-        else
-        {
-            P_b;
-        }
-    }
+    ABSORB_LANES(s, in, inlen);
 
-    // Absorb partial lane of AD and add padding
-    if (inlen > 0)
-    {
-        tmp0 = 0;
-        u8 *tmp0_bytes = (u8 *)&tmp0;
-        u8 i;
-        for (i = 0; i < inlen; i++)
-        {
-            tmp0_bytes[i] = *in;
-            in += 1;
-        }
-        tmp0_bytes[i] = 0x80;
-        to_bit_interleaving(&t0, U64BIG(tmp0));
-        x0.e ^= t0.e;
-        x0.o ^= t0.o;
-        P_a;
-    }
-
-    // Absorb AD padding if not already done before
-    if (inlen == 0)
-    {
-        x0.o ^= 0x80000000;
-        P_a;
-    }
-
-    // Squeeze full lanes
+    lane_t t0;
     for (size_t i = 0; i < 4; i++)
     {
-        from_bit_interleaving(&tmp0, x0);
-        *(((u64 *)out) + i) = U64BIG(tmp0);
+        // Squeeze full lanes
+        from_bit_interleaving(&t0, s->l[0]);
+        *(uint64_t *)(out + 8 * i) = U64BIG(t0).x;
         if (i < 3)
         {
-            P_b;
+            P_sH;
         }
     }
 }
