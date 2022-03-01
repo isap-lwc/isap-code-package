@@ -1,30 +1,31 @@
 #include <stdio.h>
+#include <inttypes.h>
 #include "api.h"
 #include "isap.h"
 #include "asconp.h"
 #include "forceinline.h"
 
 // ISAP-A-128a
-const u8 ISAP_IV1[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const u8 ISAP_IV2[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const u8 ISAP_IV3[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
+const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 #define P_sH P12(s)
 #define P_sB P1(s)
 #define P_sE P6(s)
 #define P_sK P12(s)
 
-forceinline void ABSORB_LANES(state_t *s, const u8 *src, u64 len)
+forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
 {
     while (len >= ISAP_rH_SZ)
     {
-        s->x[0] ^= U64BIG(*(u64 *)src);
+        s->x[0] ^= U64BIG(*(uint64_t *)src);
         len -= ISAP_rH_SZ;
         src += 8;
         P_sH;
     }
     if (len > 0)
     {
-        u64 i;
+        size_t i;
         for (i = 0; i < len; i++)
         {
             s->b[0][7 - i] ^= *src;
@@ -45,20 +46,20 @@ forceinline void ABSORB_LANES(state_t *s, const u8 *src, u64 len)
 /******************************************************************************/
 
 void isap_rk(
-    const u8 *k,
-    const u8 *iv,
-    const u8 *y,
+    const uint8_t *k,
+    const uint8_t *iv,
+    const uint8_t *y,
     const size_t ylen,
     state_t *out,
-    const u64 outlen)
+    const uint64_t outlen)
 {
     state_t state;
     state_t *s = &state;
 
     // Init state
-    s->x[0] = U64BIG(((u64 *)k)[0]);
-    s->x[1] = U64BIG(((u64 *)k)[1]);
-    s->x[2] = U64BIG(((u64 *)iv)[0]);
+    s->x[0] = U64BIG(*(uint64_t *)(k + 0));
+    s->x[1] = U64BIG(*(uint64_t *)(k + 8));
+    s->x[2] = U64BIG(*(uint64_t *)(iv));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sK;
@@ -66,7 +67,7 @@ void isap_rk(
     // Absorb Y, bit by bit
     for (size_t i = 0; i < 16; i++)
     {
-        u64 cur_byte = *y;
+        uint64_t cur_byte = *y;
         s->x[0] ^= (cur_byte & 0x80) << 56;
         P_sB;
         s->x[0] ^= (cur_byte & 0x40) << 57;
@@ -104,18 +105,18 @@ void isap_rk(
 /******************************************************************************/
 
 void isap_mac(
-    const u8 *k,
-    const u8 *npub,
-    const u8 *ad, const u64 adlen,
-    const u8 *c, const u64 clen,
-    u8 *tag)
+    const uint8_t *k,
+    const uint8_t *npub,
+    const uint8_t *ad, const uint64_t adlen,
+    const uint8_t *c, const uint64_t clen,
+    uint8_t *tag)
 {
     state_t state;
     state_t *s = &state;
 
-    s->x[0] = U64BIG(((u64 *)npub)[0]);
-    s->x[1] = U64BIG(((u64 *)npub)[1]);
-    s->x[2] = U64BIG(((u64 *)ISAP_IV1)[0]);
+    s->x[0] = U64BIG(*(uint64_t *)(npub + 0));
+    s->x[1] = U64BIG(*(uint64_t *)(npub + 8));
+    s->x[2] = U64BIG(*(uint64_t *)(ISAP_IV_A));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sH;
@@ -132,12 +133,12 @@ void isap_mac(
     // Derive K*
     s->x[0] = U64BIG(s->x[0]);
     s->x[1] = U64BIG(s->x[1]);
-    isap_rk(k, ISAP_IV2, (u8 *)(s->b), CRYPTO_KEYBYTES, s, CRYPTO_KEYBYTES);
+    isap_rk(k, ISAP_IV_KA, (uint8_t *)(s->b), CRYPTO_KEYBYTES, s, CRYPTO_KEYBYTES);
 
     // Squeeze tag
     P_sH;
-    ((u64 *)tag)[0] = U64BIG(s->x[0]);
-    ((u64 *)tag)[1] = U64BIG(s->x[1]);
+    *(uint64_t *)(tag + 0) = U64BIG(s->x[0]);
+    *(uint64_t *)(tag + 8) = U64BIG(s->x[1]);
 }
 
 /******************************************************************************/
@@ -145,34 +146,35 @@ void isap_mac(
 /******************************************************************************/
 
 void isap_enc(
-    const u8 *k,
-    const u8 *npub,
-    const u8 *m,
-    u64 mlen,
-    u8 *c)
+    const uint8_t *k,
+    const uint8_t *npub,
+    const uint8_t *m,
+    uint64_t mlen,
+    uint8_t *c)
 {
     state_t state;
     state_t *s = &state;
-    isap_rk(k, ISAP_IV3, npub, CRYPTO_NPUBBYTES, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+    isap_rk(k, ISAP_IV_KE, npub, CRYPTO_NPUBBYTES, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
 
     // Init state
-    s->x[3] = U64BIG(((u64 *)npub)[0]);
-    s->x[4] = U64BIG(((u64 *)npub)[1]);
-    P_sE;
+    s->x[3] = U64BIG(*(uint64_t *)(npub + 0));
+    s->x[4] = U64BIG(*(uint64_t *)(npub + 8));
 
     // Squeeze key stream
     while (mlen >= ISAP_rH_SZ)
     {
         // Squeeze full lane
-        *(u64 *)c = U64BIG(s->x[0]) ^ *(u64 *)m;
+        P_sE;
+        *(uint64_t *)c = U64BIG(s->x[0]) ^ *(uint64_t *)m;
         mlen -= ISAP_rH_SZ;
         m += 8;
         c += 8;
-        P_sE;
     }
+
     if (mlen > 0)
     {
         // Squeeze partial lane
+        P_sE;
         for (size_t i = 0; i < mlen; i++)
         {
             *c = s->b[0][7 - i] ^ *m;
@@ -186,8 +188,7 @@ void isap_enc(
 /*                                Ascon-Hash                                  */
 /******************************************************************************/
 
-// Ascon-Hash
-const u8 ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
+const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
 
 int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
 {
@@ -195,7 +196,7 @@ int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long 
     state_t *s = &state;
 
     // Initialize
-    s->x[0] = U64BIG(*(u64 *)ASCON_HASH_IV);
+    s->x[0] = U64BIG(*(uint64_t *)ASCON_HASH_IV);
     s->x[1] = 0;
     s->x[2] = 0;
     s->x[3] = 0;
@@ -207,7 +208,7 @@ int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long 
     // Squeeze full lanes
     for (size_t i = 0; i < 4; i++)
     {
-        *(u64 *)out = U64BIG(s->x[0]);
+        *(uint64_t *)out = U64BIG(s->x[0]);
         out += 8;
         if (i < 3)
         {

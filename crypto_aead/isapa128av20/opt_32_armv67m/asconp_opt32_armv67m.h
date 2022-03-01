@@ -1,36 +1,46 @@
 #ifndef ASCONP_H_
 #define ASCONP_H_
 
+#include <inttypes.h>
 #include "forceinline.h"
 
-typedef unsigned char u8;
-typedef unsigned long u32;
-typedef unsigned long long u64;
-
-typedef struct
+typedef union
 {
-    u32 e;
-    u32 o;
-} u32_2;
+    uint64_t x;
+    uint32_t w[2];
+    uint8_t b[8];
+} lane_t;
+
+typedef union
+{
+    lane_t l[5];
+    uint64_t x[5];
+    uint32_t w[5][2];
+    uint8_t b[5][8];
+} state_t;
+
+#define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
 
 /* ---------------------------------------------------------------- */
 
-forceinline u64 U64BIG(u64 x)
+forceinline lane_t U64BIG(lane_t x)
 {
-    return ((((x)&0x00000000000000FFULL) << 56) | (((x)&0x000000000000FF00ULL) << 40) |
-            (((x)&0x0000000000FF0000ULL) << 24) | (((x)&0x00000000FF000000ULL) << 8) |
-            (((x)&0x000000FF00000000ULL) >> 8) | (((x)&0x0000FF0000000000ULL) >> 24) |
-            (((x)&0x00FF000000000000ULL) >> 40) | (((x)&0xFF00000000000000ULL) >> 56));
+    lane_t t0;
+    t0.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
+            (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
+            (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
+            (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
+    return t0;
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline void to_bit_interleaving(u32_2 *out, u64 in)
+forceinline void to_bit_interleaving(lane_t *out, lane_t in)
 {
-    u32 hi = (in) >> 32;
-    u32 lo = (u32)(in);
-    u32 r0, r1;
+    uint32_t lo = in.w[0];
+    uint32_t hi = in.w[1];
+    uint32_t r0, r1;
     r0 = (lo ^ (lo >> 1)) & 0x22222222, lo ^= r0 ^ (r0 << 1);
     r0 = (lo ^ (lo >> 2)) & 0x0C0C0C0C, lo ^= r0 ^ (r0 << 2);
     r0 = (lo ^ (lo >> 4)) & 0x00F000F0, lo ^= r0 ^ (r0 << 4);
@@ -39,18 +49,18 @@ forceinline void to_bit_interleaving(u32_2 *out, u64 in)
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 8)) & 0x0000FF00, hi ^= r1 ^ (r1 << 8);
-    (*out).e = (lo & 0x0000FFFF) | (hi << 16);
-    (*out).o = (lo >> 16) | (hi & 0xFFFF0000);
+    out->w[0] = (lo & 0x0000FFFF) | (hi << 16);
+    out->w[1] = (lo >> 16) | (hi & 0xFFFF0000);
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline void from_bit_interleaving(u64 *out, u32_2 in)
+forceinline void from_bit_interleaving(lane_t *out, lane_t in)
 {
-    u32 lo = ((in).e & 0x0000FFFF) | ((in).o << 16);
-    u32 hi = ((in).e >> 16) | ((in).o & 0xFFFF0000);
-    u32 r0, r1;
+    uint32_t lo = ((in).w[0] & 0x0000FFFF) | ((in).w[1] << 16);
+    uint32_t hi = ((in).w[0] >> 16) | ((in).w[1] & 0xFFFF0000);
+    uint32_t r0, r1;
     r0 = (lo ^ (lo >> 8)) & 0x0000FF00, lo ^= r0 ^ (r0 << 8);
     r0 = (lo ^ (lo >> 4)) & 0x00F000F0, lo ^= r0 ^ (r0 << 4);
     r0 = (lo ^ (lo >> 2)) & 0x0C0C0C0C, lo ^= r0 ^ (r0 << 2);
@@ -59,13 +69,16 @@ forceinline void from_bit_interleaving(u64 *out, u32_2 in)
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 1)) & 0x22222222, hi ^= r1 ^ (r1 << 1);
-    *out = (u64)hi << 32 | lo;
+    out->x = (uint64_t)hi << 32 | lo;
 }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void ROUND(u32_2 *x0, u32_2 *x1, u32_2 *x2, u32_2 *x3, u32_2 *x4, u32 *reg0, u32 *reg1, u32 *reg2, u32 *reg3)
+forceinline void ROUND(state_t *s, uint32_t ce, uint32_t co)
 {
+    uint32_t reg0, reg1, reg2, reg3;
+    s->w[2][0] ^= ce;
+    s->w[2][1] ^= co;
     __asm__ __volatile__(
         "eor %[x0_e], %[x0_e], %[x4_e]\n\t"
         "eor %[x0_o], %[x0_o], %[x4_o]\n\t"
@@ -121,91 +134,50 @@ forceinline void ROUND(u32_2 *x0, u32_2 *x1, u32_2 *x2, u32_2 *x3, u32_2 *x4, u3
         "eor %[reg1], %[x4_o], %[x4_o], ror #17\n\t"
         "eor %[x4_e], %[x4_e], %[reg1], ror #3\n\t"
         "eor %[x4_o], %[x4_o], %[reg0], ror #4\n\t"
-        : [x0_e] "+r"(x0->e), [x1_e] "+r"(x1->e),
-          [x2_e] "+r"(x2->e), [x3_e] "+r"(x3->e),
-          [x4_e] "+r"(x4->e), [x0_o] "+r"(x0->o),
-          [x1_o] "+r"(x1->o), [x2_o] "+r"(x2->o),
-          [x3_o] "+r"(x3->o), [x4_o] "+r"(x4->o),
-          [reg0] "=r"(*reg0), [reg1] "=r"(*reg1),
-          [reg2] "=r"(*reg2), [reg3] "=r"(*reg3)::);
+        : [x0_e] "+r"(s->w[0][0]), [x1_e] "+r"(s->w[1][0]),
+          [x2_e] "+r"(s->w[2][0]), [x3_e] "+r"(s->w[3][0]),
+          [x4_e] "+r"(s->w[4][0]), [x0_o] "+r"(s->w[0][1]),
+          [x1_o] "+r"(s->w[1][1]), [x2_o] "+r"(s->w[2][1]),
+          [x3_o] "+r"(s->w[3][1]), [x4_o] "+r"(s->w[4][1]),
+          [reg0] "=r"(reg0), [reg1] "=r"(reg1),
+          [reg2] "=r"(reg2), [reg3] "=r"(reg3)::);
 }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P_12(u32_2 *x0, u32_2 *x1, u32_2 *x2, u32_2 *x3, u32_2 *x4)
+forceinline void P12ROUNDS(state_t *s)
 {
-    u32 reg0, reg1, reg2, reg3;
-    x2->e ^= 0xc;
-    x2->o ^= 0xc;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0xc;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0xc;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x6;
-    x2->o ^= 0xc;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x3;
-    x2->o ^= 0xc;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x6;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x3;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0xc;
-    x2->o ^= 0x6;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0x6;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0xc;
-    x2->o ^= 0x3;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0x3;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
+    ROUND(s, 0xc, 0xc);
+    ROUND(s, 0x9, 0xc);
+    ROUND(s, 0xc, 0x9);
+    ROUND(s, 0x9, 0x9);
+    ROUND(s, 0x6, 0xc);
+    ROUND(s, 0x3, 0xc);
+    ROUND(s, 0x6, 0x9);
+    ROUND(s, 0x3, 0x9);
+    ROUND(s, 0xc, 0x6);
+    ROUND(s, 0x9, 0x6);
+    ROUND(s, 0xc, 0x3);
+    ROUND(s, 0x9, 0x3);
 }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P_6(u32_2 *x0, u32_2 *x1, u32_2 *x2, u32_2 *x3, u32_2 *x4)
+forceinline void P6ROUNDS(state_t *s)
 {
-    u32 reg0, reg1, reg2, reg3;
-    x2->e ^= 0x6;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x3;
-    x2->o ^= 0x9;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0xc;
-    x2->o ^= 0x6;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0x6;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0xc;
-    x2->o ^= 0x3;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
-    x2->e ^= 0x9;
-    x2->o ^= 0x3;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
+    ROUND(s, 0x6, 0x9);
+    ROUND(s, 0x3, 0x9);
+    ROUND(s, 0xc, 0x6);
+    ROUND(s, 0x9, 0x6);
+    ROUND(s, 0xc, 0x3);
+    ROUND(s, 0x9, 0x3);
 }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P_1(u32_2 *x0, u32_2 *x1, u32_2 *x2, u32_2 *x3, u32_2 *x4)
+forceinline void P1ROUNDS(state_t *s)
 {
-    u32 reg0, reg1, reg2, reg3;
-    x2->e ^= 0x9;
-    x2->o ^= 0x3;
-    ROUND(x0, x1, x2, x3, x4, &reg0, &reg1, &reg2, &reg3);
+    ROUND(s, 0x9, 0x3);
 }
 
 /* ---------------------------------------------------------------- */

@@ -1,3 +1,5 @@
 genkat
 getcycles
+LWC_AEAD_KAT_128_128.txt
+LWC_HASH_KAT_256.txt
 
