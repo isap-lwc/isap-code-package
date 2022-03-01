@@ -12,11 +12,13 @@ This repository contains implementations of the following algorithms:
 
 and the following implementations:
 
-- `ref`: reference implementation
+
 - `avx512`: avx512 optimized C implementation
-- `opt_64`: 64-bit optimized C implementation
 - `opt_32`: 32-bit optimized C implementation
 - `opt_32_armv67`: 32-bit optimized C/ASM implementation for ARMv6 and ARMv7
+- `opt_32_compact`: more compact variant of `opt_32`
+- `opt_64`: 64-bit optimized C implementation
+- `ref`: reference implementation
 
 ## Performance results on different CPUs in cycles per byte:
 
