@@ -1,7 +1,7 @@
 ### Folder Structure:
 
 * **isapa128av20**
-  * Code for ISAP128a using Ascon-p.
+  * Code for ISAP128a using Ascon-p (primary recommendation).
 * **isapa128v20**
   * Code for ISAP128 using Ascon-p.
 * **isapk128av20**

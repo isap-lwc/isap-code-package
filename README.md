@@ -38,49 +38,43 @@ For up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implem
 
 ## Run KATs:
 
-First, compile code for the desired architecture. Then execute: `./genkat`
+1. Compile code for the desired architecture.
+2. Execute: `./genkat`
 
-### x64
-
-**ISAP-A-128a**
+**x64: ISAP-A-128a**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 
-**ISAP-A-128a + Ascon-Hash**
+**x64: ISAP-A-128a + Ascon-Hash**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat`
-    
-### ARMv6/ARMv7
 
-**ISAP-A-128a**
+**ARMv6/7: ISAP-A-128a**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
 
-**ISAP-A-128a + Ascon-Hash**
+**ARMv6/7: ISAP-A-128a + Ascon-Hash**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat`
 
 ## Run Benchmarks:
 
-First, compile code for the desired architecture. Then execute: `./getcycles`
+1. Compile code for the desired architecture.
+2. Execute: `./getcycles`
 
-### x64
-
-**ISAP-A-128a**
+**x64: ISAP-A-128a**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 
-**ISAP-A-128a + Ascon-Hash**
+**x64: ISAP-A-128a + Ascon-Hash**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles`
-    
-### ARMv6/ARMv7
 
-**ISAP-A-128a**
+**ARMv6/7: ISAP-A-128a**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
 
-**ISAP-A-128a + Ascon-Hash**
+**ARMv6/7: ISAP-A-128a + Ascon-Hash**
 
 `gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles`
 
