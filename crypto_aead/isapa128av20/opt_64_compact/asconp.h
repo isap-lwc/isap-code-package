@@ -122,9 +122,9 @@ forceinline void ROUND(uint64_t C, state_t *s)
 //     ROUND(0x4b, s);
 // }
 
-void PX(state_t *s, uint32_t x)
+void PX(state_t *s, uint8_t r)
 {
-    switch (x)
+    switch (r)
     {
     case 12:
         ROUND(0xf0, s);
