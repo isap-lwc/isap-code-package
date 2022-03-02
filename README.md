@@ -15,12 +15,12 @@ and the following implementations:
 
 - `avx512`: AVX-512 implementation in C.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
-- `bi_32_armv67`: Bit-interleaved 32-bit implementation using ARMv6/ARMv7 assembly.
-- `bi_32_compact`: More compact variant of `opt_32`.
+- `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
+- `bi_32_compact`: More compact variant of `bi_32`.
 - `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `opt_64`: Optimized 64-bit implementation in C.
 - `opt_64_compact`: More compact variant of `opt_64`.
-  - On microprocessors without rotation instruction this variant might perform better than the `opt_32` implementations.
+  - On microprocessors without rotation instruction this variant might perform better than the `bi_32` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
 - `ref`: Easy-to-read implementation in C.
 
@@ -54,19 +54,19 @@ gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aea
 **x64: ISAP-A-128a + Ascon-Hash**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
 ```
 
-**ARMv6/7: ISAP-A-128a**
+**ARMv6: ISAP-A-128a**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypto_aead_hash/isapa128av20/bi_32_armv6/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
 ```
 
-**ARMv6/7: ISAP-A-128a + Ascon-Hash**
+**ARMv6: ISAP-A-128a + Ascon-Hash**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypto_aead_hash/isapa128av20/bi_32_armv6/*.c -DCRYPTO_AEAD -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
 ```
 
 Run Benchmarks:
@@ -84,19 +84,19 @@ gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aea
 **x64: ISAP-A-128a + Ascon-Hash**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
 ```
 
-**ARMv6/7: ISAP-A-128a**
+**ARMv6: ISAP-A-128a**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypto_aead_hash/isapa128av20/bi_32_armv6/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
 ```
 
-**ARMv6/7: ISAP-A-128a + Ascon-Hash**
+**ARMv6: ISAP-A-128a + Ascon-Hash**
 
 ```
-gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypto_aead_hash/isapa128av20/bi_32_armv6/*.c -DCRYPTO_AEAD -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
 ```
 
 License Information:
