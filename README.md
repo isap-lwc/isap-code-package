@@ -1,6 +1,7 @@
-# ISAP Code Package
+ISAP Code Package
+=================
 
-ISAP is a family of lightweight authenticated encryption algorithms designed with a focus on **robustness against implementation attacks** and is currently competing in the 2nd round of the NIST Lightweight Cryptography competition ([spec](https://csrc.nist.gov/Projects/Lightweight-Cryptography/Round-2-Candidates),[web](https://isap.iaik.tugraz.at)). It is of particular interest for applications like firmware updates where **robustness against power analysis and fault attacks** is crucial and code size and a **small footprint in hardware** matters. ISAP's original version was published at [FSE 2017](https://tosc.iacr.org/index.php/ToSC/article/view/585).
+ISAP is a family of lightweight authenticated encryption algorithms designed with a focus on **robustness against implementation attacks** and is currently competing in the final round of the NIST Lightweight Cryptography competition ([spec](https://csrc.nist.gov/Projects/lightweight-cryptography/finalists),[web](https://isap.iaik.tugraz.at)). It is of particular interest for applications like firmware updates where **robustness against power analysis and fault attacks** is crucial and code size and a **small footprint in hardware** matters. ISAP's original version was published at [FSE 2017](https://tosc.iacr.org/index.php/ToSC/article/view/585).
 
 This repository contains implementations of the following algorithms:
 
@@ -12,7 +13,7 @@ This repository contains implementations of the following algorithms:
 
 and the following implementations:
 
-- `avx512`: AVX-512 optimized implementation in C.
+- `avx512`: AVX-512 implementation in C.
 - `opt_32`: Bit-interleaved 32-bit implementation in C.
 - `opt_32_armv67`: Bit-interleaved 32-bit implementation using ARMv6/ARMv7 assembly.
 - `opt_32_compact`: More compact variant of `opt_32`.
@@ -23,11 +24,10 @@ and the following implementations:
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
 - `ref`: Easy-to-read implementation in C.
 
-## Performance results on different CPUs in cycles per byte:
+Performance on different platforms (cycles/byte):
+-------------------------------------------------
 
-ISAP was especially designed for scenarios where implementation security is required. It features, amongst others, **build-in hardening/protection against implementation attacks** such as Differential Power Analysis (DPA), Differential Fault Attacks (DFA), Statistical Fault Attacks (SFA), and Statistical Ineffective Fault Attacks (SIFA).
-
-#### ISAP-A-128a (primary recommendation)
+**ISAP-A-128a (primary recommendation)**
 
 | Message Length in Bytes: |    64 |  1536 |  long |
 |:-------------------------|------:|------:|------:|
@@ -39,49 +39,67 @@ ISAP was especially designed for scenarios where implementation security is requ
 
 For up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implementations.html)
 
-## Run KATs:
+Run KATs:
+---------
 
 1. Compile code for the desired architecture.
 2. Execute: `./genkat`
 
 **x64: ISAP-A-128a**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+```
 
 **x64: ISAP-A-128a + Ascon-Hash**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
+```
 
 **ARMv6/7: ISAP-A-128a**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/genkat_aead.c -o genkat
+```
 
 **ARMv6/7: ISAP-A-128a + Ascon-Hash**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/genkat_hash.c -o genkat
+```
 
-## Run Benchmarks:
+Run Benchmarks:
+---------------
 
 1. Compile code for the desired architecture.
 2. Execute: `./getcycles`
 
 **x64: ISAP-A-128a**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+```
 
 **x64: ISAP-A-128a + Ascon-Hash**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_64 crypto_aead_hash/isapa128av20/opt_64/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
+```
 
 **ARMv6/7: ISAP-A-128a**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_AEAD -Itests tests/getcycles.c -o getcycles
+```
 
 **ARMv6/7: ISAP-A-128a + Ascon-Hash**
 
-`gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles`
+```
+gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/opt_32_armv67m crypto_aead_hash/isapa128av20/opt_32_armv67m/*.c -DCRYPTO_HASH -Itests tests/getcycles.c -o getcycles
+```
 
-## License Information:
+License Information:
+--------------------
 
 See LICENSE.txt
-
