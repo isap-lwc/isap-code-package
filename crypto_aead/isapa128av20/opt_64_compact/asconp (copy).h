@@ -14,12 +14,6 @@ typedef union
 const int R[5][2] = {
     {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
 
-#define P_sH P12(s)
-#define P_sB P1(s)
-#define P_sE P6(s)
-#define P_sK P12(s)
-#define P_PVP P7(s)
-
 /* ---------------------------------------------------------------- */
 
 uint64_t U64BIG(uint64_t x)
@@ -93,19 +87,6 @@ void P12(state_t *s)
     ROUND(0xd2, s);
     ROUND(0xc3, s);
     ROUND(0xb4, s);
-    ROUND(0xa5, s);
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P7(state_t *s)
-{
     ROUND(0xa5, s);
     ROUND(0x96, s);
     ROUND(0x87, s);

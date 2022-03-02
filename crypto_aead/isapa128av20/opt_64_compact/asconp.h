@@ -11,6 +11,13 @@ typedef union
     uint8_t b[5][8];
 } state_t;
 
+#define P_sH PX(s, 12)
+#define P_sB PX(s, 1)
+#define P_sE PX(s, 6)
+#define P_sK PX(s, 12)
+
+/* ---------------------------------------------------------------- */
+
 const int R[5][2] = {
     {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
 
@@ -80,39 +87,61 @@ forceinline void ROUND(uint64_t C, state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-void P12(state_t *s)
+// void P12(state_t *s)
+// {
+//     ROUND(0xf0, s);
+//     ROUND(0xe1, s);
+//     ROUND(0xd2, s);
+//     ROUND(0xc3, s);
+//     ROUND(0xb4, s);
+//     ROUND(0xa5, s);
+//     ROUND(0x96, s);
+//     ROUND(0x87, s);
+//     ROUND(0x78, s);
+//     ROUND(0x69, s);
+//     ROUND(0x5a, s);
+//     ROUND(0x4b, s);
+// }
+
+// /* ---------------------------------------------------------------- */
+
+// void P6(state_t *s)
+// {
+//     ROUND(0x96, s);
+//     ROUND(0x87, s);
+//     ROUND(0x78, s);
+//     ROUND(0x69, s);
+//     ROUND(0x5a, s);
+//     ROUND(0x4b, s);
+// }
+
+// /* ---------------------------------------------------------------- */
+
+// void P1(state_t *s)
+// {
+//     ROUND(0x4b, s);
+// }
+
+void PX(state_t *s, uint32_t x)
 {
-    ROUND(0xf0, s);
-    ROUND(0xe1, s);
-    ROUND(0xd2, s);
-    ROUND(0xc3, s);
-    ROUND(0xb4, s);
-    ROUND(0xa5, s);
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P6(state_t *s)
-{
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P1(state_t *s)
-{
-    ROUND(0x4b, s);
+    switch (x)
+    {
+    case 12:
+        ROUND(0xf0, s);
+        ROUND(0xe1, s);
+        ROUND(0xd2, s);
+        ROUND(0xc3, s);
+        ROUND(0xb4, s);
+        ROUND(0xa5, s);
+    case 6:
+        ROUND(0x96, s);
+        ROUND(0x87, s);
+        ROUND(0x78, s);
+        ROUND(0x69, s);
+        ROUND(0x5a, s);
+    default:
+        ROUND(0x4b, s);
+    }
 }
 
 /* ---------------------------------------------------------------- */

@@ -10,10 +10,6 @@
 const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-#define P_sH P12(s)
-#define P_sB P1(s)
-#define P_sE P6(s)
-#define P_sK P12(s)
 
 forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
 {
