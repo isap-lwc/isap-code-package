@@ -12,13 +12,16 @@ This repository contains implementations of the following algorithms:
 
 and the following implementations:
 
-
-- `avx512`: avx512 optimized C implementation
-- `opt_32`: 32-bit optimized C implementation
-- `opt_32_armv67`: 32-bit optimized C/ASM implementation for ARMv6 and ARMv7
-- `opt_32_compact`: more compact variant of `opt_32`
-- `opt_64`: 64-bit optimized C implementation
-- `ref`: reference implementation
+- `avx512`: AVX-512 optimized implementation in C.
+- `opt_32`: Bit-interleaved 32-bit implementation in C.
+- `opt_32_armv67`: Bit-interleaved 32-bit implementation using ARMv6/ARMv7 assembly.
+- `opt_32_compact`: More compact variant of `opt_32`.
+- `opt_32_stp`: Variant of `opt_32` that includes a leakage-resilient tag comparison.
+- `opt_64`: Optimized 64-bit implementation in C.
+- `opt_64_compact`: More compact variant of `opt_64`.
+  - On microprocessors without rotation instruction this variant might perform better than the `opt_32` implementations.
+- `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
+- `ref`: Easy-to-read implementation in C.
 
 ## Performance results on different CPUs in cycles per byte:
 
