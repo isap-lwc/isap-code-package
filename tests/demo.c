@@ -29,7 +29,7 @@
 // copyright protection within the United States.
 //
 
-// This code was modified such that it only performs one end/dec computation.
+// This code was modified such that it only performs one enc/dec computation.
 
 // disable deprecation for sprintf and fopen
 #ifdef _MSC_VER
