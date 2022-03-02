@@ -2,7 +2,8 @@
 #include <inttypes.h>
 #include "api.h"
 #include "isap.h"
-#include "asconp_opt32.h"
+#include "asconp.h"
+#include "config.h"
 
 // ISAP-A-128a
 const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
@@ -203,3 +204,43 @@ void isap_enc(
     }
 }
 
+/******************************************************************************/
+/*                                Ascon-Hash                                  */
+/******************************************************************************/
+
+#if ENABLE_HASH == 1
+
+const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
+
+int crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
+{
+
+    state_t state;
+    state_t *s = &state;
+
+    // Initialize
+    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(ASCON_HASH_IV)));
+    s->x[1] = 0;
+    s->x[2] = 0;
+    s->x[3] = 0;
+    s->x[4] = 0;
+    P_sH;
+
+    ABSORB_LANES(s, in, inlen);
+
+    lane_t t0;
+    for (size_t i = 0; i < 4; i++)
+    {
+        // Squeeze full lanes
+        from_bit_interleaving(&t0, s->l[0]);
+        *(uint64_t *)(out + 8 * i) = U64BIG(t0).x;
+        if (i < 3)
+        {
+            P_sH;
+        }
+    }
+    
+    return 0;
+}
+
+#endif

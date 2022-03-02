@@ -3,6 +3,7 @@
 #include "api.h"
 #include "isap.h"
 #include "asconp.h"
+#include "config.h"
 #include "forceinline.h"
 
 // ISAP-A-128a
@@ -183,4 +184,43 @@ void isap_enc(
         }
     }
 }
+
+/******************************************************************************/
+/*                                Ascon-Hash                                  */
+/******************************************************************************/
+
+#if ENABLE_HASH == 1
+
+const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
+
+int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
+{
+    state_t state;
+    state_t *s = &state;
+
+    // Initialize
+    s->x[0] = U64BIG(*(uint64_t *)ASCON_HASH_IV);
+    s->x[1] = 0;
+    s->x[2] = 0;
+    s->x[3] = 0;
+    s->x[4] = 0;
+    P_sH;
+
+    ABSORB_LANES(s, in, inlen);
+
+    // Squeeze full lanes
+    for (size_t i = 0; i < 4; i++)
+    {
+        *(uint64_t *)out = U64BIG(s->x[0]);
+        out += 8;
+        if (i < 3)
+        {
+            P_sH;
+        }
+    }
+
+    return 0;
+}
+
+#endif
 
