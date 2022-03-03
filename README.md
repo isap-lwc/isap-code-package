@@ -15,14 +15,14 @@ and the following implementations:
 
 - `avx512`: AVX-512 implementation in C.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
-    - These implementations should perform well on 32-bit processors that feature a rotation instruction such as ARM Cortex-M3/4.
+    - These implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
 - `bi_32_compact`: More compact variant of `bi_32`.
 - `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
 - `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
 - `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `opt_64`: Optimized 64-bit implementation in C.
 - `opt_64_compact`: More compact variant of `opt_64`.
-  - On microprocessors without rotation instruction, or microprocessors with word sizes smaller than 32 bits, this variant might perform better than the `bi_32*` implementations.
+  - On processors without rotation instruction, or processors with word sizes smaller than 32 bit, this variant might perform better than the `bi_32*` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
 - `ref`: Easy-to-read implementation in C.
 
