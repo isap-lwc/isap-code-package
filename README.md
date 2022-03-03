@@ -39,7 +39,7 @@ Performance on different platforms (cycles/byte):
 | Raspberry Pi 1B (ARMv6)  |   551 |   171 |   159 |
 | STM32F303 (ARMv7m)       |   542 |   168 |   150 |
 
-For up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implementations.html)
+For more and up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implementations.html).
 
 Run KATs:
 ---------
@@ -87,7 +87,7 @@ Compile and benchmark a specific implementation:
 1. Use one of the compile commands provided below (adjust as needed)
 2. Execute: `./getcycles`
 
-*Note: On ARM devices you likely need to first activate the performance monitor unit (PMU). For more information click [here](https://github.com/ascon/ascon-c#hints-to-activate-the-performance-monitor-unit-pmu-on-arm-cpus)*
+*Note: On ARM devices you likely need to first activate the performance monitor unit (PMU). For more information click [here](https://github.com/ascon/ascon-c#hints-to-activate-the-performance-monitor-unit-pmu-on-arm-cpus).*
 
 **x64: ISAP-A-128a**
 
