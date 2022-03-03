@@ -15,7 +15,7 @@ and the following implementations:
 
 - `avx512`: AVX-512 implementation in C.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
-    - These implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
+    - 32-bit bit-interleaved implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
 - `bi_32_compact`: More compact variant of `bi_32`.
 - `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
 - `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
@@ -24,7 +24,7 @@ and the following implementations:
 - `opt_64_compact`: More compact variant of `opt_64`.
   - On processors without rotation instruction, or processors with word sizes smaller than 32 bit, this variant might perform better than the `bi_32*` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
-- `ref`: Easy-to-read implementation in C.
+- `ref`: Easy-to-read implementation in C (not suitable for benchmarks).
 
 Performance on different platforms (cycles/byte):
 -------------------------------------------------
@@ -44,7 +44,12 @@ For up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implem
 Run KATs:
 ---------
 
-1. Compile code for the desired architecture.
+Compile and test all implementations:
+1. `cd tests`
+2. `bash test_all.sh` (ARM assembly variants are excluded by default)
+
+Compile and test a specific implementation:
+1. Use one of the compile commands provided below (adjust as needed)
 2. Execute: `./genkat`
 
 **x64: ISAP-A-128a**
@@ -74,7 +79,12 @@ gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypt
 Run Benchmarks:
 ---------------
 
-1. Compile code for the desired architecture.
+Compile and benchmark all implementations:
+1. `cd tests`
+2. `bash bench_all.sh` (ARM assembly variants are excluded by default)
+
+Compile and benchmark a specific implementation:
+1. Use one of the compile commands provided below (adjust as needed)
 2. Execute: `./getcycles`
 
 **x64: ISAP-A-128a**
