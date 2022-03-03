@@ -13,7 +13,7 @@ This repository contains implementations of the following algorithms:
 
 and the following implementations:
 
-- `avx512`: AVX-512 implementation in C.
+- `avx_512`: AVX-512 implementation in C.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
     - 32-bit bit-interleaved implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
 - `bi_32_compact`: More compact variant of `bi_32`.
