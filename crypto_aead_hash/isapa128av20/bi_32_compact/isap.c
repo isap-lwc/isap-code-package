@@ -1,1 +1,1 @@
-../bi_32/isap.c
+../../../crypto_aead/isapa128av20/bi_32_compact/isap.c

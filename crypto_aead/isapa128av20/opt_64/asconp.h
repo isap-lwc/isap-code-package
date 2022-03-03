@@ -13,11 +13,17 @@ typedef union
 
 const int R[5][2] = {
     {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
+
+/* ---------------------------------------------------------------- */
     
-#define P_sH P12(s)
-#define P_sB P1(s)
-#define P_sE P6(s)
-#define P_sK P12(s)
+#define P_sH P12ROUNDS(s)
+#define P_sB P1ROUNDS(s)
+#define P_sE P6ROUNDS(s)
+#define P_sK P12ROUNDS(s)
+
+/* ---------------------------------------------------------------- */
+
+#define ROTR(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
 
 /* ---------------------------------------------------------------- */
 
@@ -28,10 +34,6 @@ forceinline uint64_t U64BIG(uint64_t x)
             (((x)&0x000000FF00000000ULL) >> 8) | (((x)&0x0000FF0000000000ULL) >> 24) |
             (((x)&0x00FF000000000000ULL) >> 40) | (((x)&0xFF00000000000000ULL) >> 56));
 }
-
-/* ---------------------------------------------------------------- */
-
-#define ROTR(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
 
 /* ---------------------------------------------------------------- */
 
@@ -85,7 +87,7 @@ forceinline void ROUND(uint64_t C, state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P12(state_t *s)
+forceinline void P12ROUNDS(state_t *s)
 {
     ROUND(0xf0, s);
     ROUND(0xe1, s);
@@ -103,7 +105,7 @@ forceinline void P12(state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P6(state_t *s)
+forceinline void P6ROUNDS(state_t *s)
 {
     ROUND(0x96, s);
     ROUND(0x87, s);
@@ -115,7 +117,7 @@ forceinline void P6(state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P1(state_t *s)
+forceinline void P1ROUNDS(state_t *s)
 {
     ROUND(0x4b, s);
 }

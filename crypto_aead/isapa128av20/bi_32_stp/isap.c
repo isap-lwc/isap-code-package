@@ -9,11 +9,6 @@
 const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-#define P_sB P1ROUNDS(s)
-#define P_sE P6ROUNDS(s)
-#define P_sK P12ROUNDS(s)
-#define P_sH P12ROUNDS(s)
-#define P_PVP P7ROUNDS(s)
 
 // Needed for LR tag comparison
 lane_t s0, s1;

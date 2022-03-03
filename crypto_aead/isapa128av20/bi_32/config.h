@@ -4,4 +4,3 @@
 #define ENABLE_HASH 0
 
 #endif // CONFIG_H
-

@@ -14,11 +14,17 @@ typedef union
 const int R[5][2] = {
     {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
 
-#define P_sH P12(s)
-#define P_sB P1(s)
-#define P_sE P6(s)
-#define P_sK P12(s)
-#define P_PVP P7(s)
+/* ---------------------------------------------------------------- */
+
+#define P_sH PXROUNDS(s, 12)
+#define P_sB PXROUNDS(s, 1)
+#define P_sE PXROUNDS(s, 6)
+#define P_sK PXROUNDS(s, 12)
+#define P_PVP PXROUNDS(s, 7)
+
+/* ---------------------------------------------------------------- */
+
+#define ROTR(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
 
 /* ---------------------------------------------------------------- */
 
@@ -29,10 +35,6 @@ uint64_t U64BIG(uint64_t x)
             (((x)&0x000000FF00000000ULL) >> 8) | (((x)&0x0000FF0000000000ULL) >> 24) |
             (((x)&0x00FF000000000000ULL) >> 40) | (((x)&0xFF00000000000000ULL) >> 56));
 }
-
-/* ---------------------------------------------------------------- */
-
-#define ROTR(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
 
 /* ---------------------------------------------------------------- */
 
@@ -86,52 +88,27 @@ forceinline void ROUND(uint64_t C, state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-void P12(state_t *s)
+void PXROUNDS(state_t *s, uint8_t x)
 {
-    ROUND(0xf0, s);
-    ROUND(0xe1, s);
-    ROUND(0xd2, s);
-    ROUND(0xc3, s);
-    ROUND(0xb4, s);
-    ROUND(0xa5, s);
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P7(state_t *s)
-{
-    ROUND(0xa5, s);
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P6(state_t *s)
-{
-    ROUND(0x96, s);
-    ROUND(0x87, s);
-    ROUND(0x78, s);
-    ROUND(0x69, s);
-    ROUND(0x5a, s);
-    ROUND(0x4b, s);
-}
-
-/* ---------------------------------------------------------------- */
-
-void P1(state_t *s)
-{
-    ROUND(0x4b, s);
+    switch (x)
+    {
+    case 12:
+        ROUND(0xf0, s);
+        ROUND(0xe1, s);
+        ROUND(0xd2, s);
+        ROUND(0xc3, s);
+        ROUND(0xb4, s);
+    case 7:
+        ROUND(0xa5, s);
+    case 6:
+        ROUND(0x96, s);
+        ROUND(0x87, s);
+        ROUND(0x78, s);
+        ROUND(0x69, s);
+        ROUND(0x5a, s);
+    default:
+        ROUND(0x4b, s);
+    }
 }
 
 /* ---------------------------------------------------------------- */

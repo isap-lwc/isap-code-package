@@ -1,1 +1,1 @@
-../opt_64/isap.h
+../../../crypto_aead/isapa128av20/opt_64_compact/isap.h

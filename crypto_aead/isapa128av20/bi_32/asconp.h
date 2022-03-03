@@ -19,6 +19,15 @@ typedef union
     uint8_t b[5][8];
 } state_t;
 
+/* ---------------------------------------------------------------- */
+
+#define P_sH P12ROUNDS(s)
+#define P_sB P1ROUNDS(s)
+#define P_sE P6ROUNDS(s)
+#define P_sK P12ROUNDS(s)
+
+/* ---------------------------------------------------------------- */
+
 #define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
 
 /* ---------------------------------------------------------------- */
