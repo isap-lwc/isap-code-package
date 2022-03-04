@@ -120,13 +120,13 @@ void isap_mac(
     s->x[4] = 0;
     P_sH;
 
-    // Absorb AD
+    // Absorb associated data
     ABSORB_LANES(s, ad, adlen);
 
     // Domain seperation
     s->w[4][0] ^= 0x1UL;
 
-    // Absorb C
+    // Absorb ciphertext
     ABSORB_LANES(s, c, clen);
 
     // Derive KA*
@@ -163,7 +163,7 @@ void isap_enc(
 
     while (mlen >= ISAP_rH / 8)
     {
-        // Squeeze full lanes
+        // Encrypt full lanes
         P_sE;
         lane_t t0 = WORDTOU64(s->l[0]);
         *(uint64_t *)c = *(uint64_t *)m ^ t0.x;
@@ -174,7 +174,7 @@ void isap_enc(
 
     if (mlen > 0)
     {
-        // Squeeze partial lane
+        // Encrypt partial lanes
         P_sE;
         lane_t t0 = WORDTOU64(s->l[0]);
         for (uint8_t i = 0; i < mlen; i++)
@@ -199,21 +199,21 @@ int crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
     state_t *s = &state;
 
     // Initialize
-    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(ASCON_HASH_IV)));
+    s->l[0] = U64TOWORD(*(lane_t *)(ASCON_HASH_IV + 0));
     s->x[1] = 0;
     s->x[2] = 0;
     s->x[3] = 0;
     s->x[4] = 0;
     P_sH;
 
+    // Absorb input
     ABSORB_LANES(s, in, inlen);
 
-    lane_t t0;
     for (size_t i = 0; i < 4; i++)
     {
         // Squeeze full lanes
-        from_bit_interleaving(&t0, s->l[0]);
-        *(uint64_t *)(out + 8 * i) = U64BIG(t0).x;
+        lane_t t0 = WORDTOU64(s->l[0]);
+        *(uint64_t *)(out + 8 * i) = t0.x;
         if (i < 3)
         {
             P_sH;

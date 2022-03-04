@@ -10,16 +10,16 @@ echo "#################"
 echo "#      AEAD     #"
 echo "#################"
 declare -a arr=(
-#"crypto_aead/isapa128av20/opt_64"
-#"crypto_aead/isapa128av20/opt_64_compact"
-#"crypto_aead/isapa128av20/opt_64_stp"
-#"crypto_aead/isapa128av20/bi_32"
-#"crypto_aead/isapa128av20/bi_32_compact"
-#"crypto_aead/isapa128av20/bi_32_stp"
+"crypto_aead/isapa128av20/opt_64"
+"crypto_aead/isapa128av20/opt_64_compact"
+"crypto_aead/isapa128av20/opt_64_stp"
+"crypto_aead/isapa128av20/bi_32"
+"crypto_aead/isapa128av20/bi_32_compact"
+"crypto_aead/isapa128av20/bi_32_stp"
 #"crypto_aead/isapa128av20/bi_32_armv6"			    # works only on arm devices
 #"crypto_aead/isapa128av20/bi_32_armv6_compact"     # works only on arm devices
 "crypto_aead/isapa128av20/bi_8"
-#"crypto_aead/isapa128av20/ref"
+"crypto_aead/isapa128av20/ref"
 )
 for i in "${arr[@]}"
 do
@@ -38,14 +38,15 @@ echo "########################"
 echo "#      AEAD + HASH     #"
 echo "########################"
 declare -a arr=(
-#"crypto_aead_hash/isapa128av20/opt_64"
-#"crypto_aead_hash/isapa128av20/opt_64_compact"
-#"crypto_aead_hash/isapa128av20/opt_64_stp"
-#"crypto_aead_hash/isapa128av20/bi_32"
-#"crypto_aead_hash/isapa128av20/bi_32_compact"
-#"crypto_aead_hash/isapa128av20/bi_32_stp"
+"crypto_aead_hash/isapa128av20/opt_64"
+"crypto_aead_hash/isapa128av20/opt_64_compact"
+"crypto_aead_hash/isapa128av20/opt_64_stp"
+"crypto_aead_hash/isapa128av20/bi_32"
+"crypto_aead_hash/isapa128av20/bi_32_compact"
+"crypto_aead_hash/isapa128av20/bi_32_stp"
 #"crypto_aead_hash/isapa128av20/bi_32_armv6"	        # works only on arm devices
 #"crypto_aead_hash/isapa128av20/bi_32_armv6_compact"    # works only on arm devices
+"crypto_aead_hash/isapa128av20/bi_8"
 )
 for i in "${arr[@]}"
 do

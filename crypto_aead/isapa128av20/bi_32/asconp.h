@@ -28,24 +28,37 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
+#define U64TOWORD(x) to_bit_interleaving(U64BIG(x))
+#define WORDTOU64(x) U64BIG(from_bit_interleaving(x))
+
+/* ---------------------------------------------------------------- */
+
+#define TOBI(x) to_bit_interleaving(x)
+#define FROMBI(x) from_bit_interleaving(x)
+
+/* ---------------------------------------------------------------- */
+
 #define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
+
+/* ---------------------------------------------------------------- */
+
+#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
 /* ---------------------------------------------------------------- */
 
 forceinline lane_t U64BIG(lane_t x)
 {
-    lane_t t0;
-    t0.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
+    x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
             (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
             (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
             (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
-    return t0;
+    return x;
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline void to_bit_interleaving(lane_t *out, lane_t in)
+forceinline lane_t to_bit_interleaving(lane_t in)
 {
     uint32_t lo = in.w[0];
     uint32_t hi = in.w[1];
@@ -58,14 +71,16 @@ forceinline void to_bit_interleaving(lane_t *out, lane_t in)
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 8)) & 0x0000FF00, hi ^= r1 ^ (r1 << 8);
-    out->w[0] = (lo & 0x0000FFFF) | (hi << 16);
-    out->w[1] = (lo >> 16) | (hi & 0xFFFF0000);
+    lane_t out;
+    out.w[0] = (lo & 0x0000FFFF) | (hi << 16);
+    out.w[1] = (lo >> 16) | (hi & 0xFFFF0000);
+    return out;
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline void from_bit_interleaving(lane_t *out, lane_t in)
+forceinline lane_t from_bit_interleaving(lane_t in)
 {
     uint32_t lo = ((in).w[0] & 0x0000FFFF) | ((in).w[1] << 16);
     uint32_t hi = ((in).w[0] >> 16) | ((in).w[1] & 0xFFFF0000);
@@ -78,12 +93,10 @@ forceinline void from_bit_interleaving(lane_t *out, lane_t in)
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 1)) & 0x22222222, hi ^= r1 ^ (r1 << 1);
-    out->x = (uint64_t)hi << 32 | lo;
+    lane_t out;
+    out.x = (uint64_t)hi << 32 | lo;
+    return out;
 }
-
-/* ---------------------------------------------------------------- */
-
-#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
 /* ---------------------------------------------------------------- */
 

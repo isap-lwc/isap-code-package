@@ -1,65 +1,66 @@
-#include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include "api.h"
 #include "isap.h"
 #include "asconp.h"
 #include "config.h"
-#include "forceinline.h"
-
-// ISAP-A-128a
-const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
 
 // Needed for LR tag comparison
 uint64_t s0, s1;
 
 forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
 {
-    while (len >= ISAP_rH_SZ)
+    while (len >= 8)
     {
-        s->x[0] ^= U64BIG(*(uint64_t *)src);
-        len -= ISAP_rH_SZ;
-        src += 8;
+        // Absorb full lanes
+        lane_t t0 = U64TOWORD(*(lane_t *)(src + 0));
+        s->x[0] ^= t0.x;
+        len -= ISAP_rH / 8;
+        src += ISAP_rH / 8;
         P_sH;
     }
+
     if (len > 0)
     {
+        // Absorb partial lane and padding
         size_t i;
+        lane_t t0 = {0};
         for (i = 0; i < len; i++)
         {
-            s->b[0][7 - i] ^= *src;
+            t0.b[7 - i] ^= *src;
             src++;
         }
-        s->b[0][7 - i] ^= 0x80;
+        t0.b[7 - i] ^= 0x80;
+        t0 = TOBI(t0);
+        s->x[0] ^= t0.x;
         P_sH;
     }
     else
     {
+        // Absorb padded empty lane
         s->b[0][7] ^= 0x80;
         P_sH;
     }
 }
 
 /******************************************************************************/
-/*                                   IsapRk                                   */
+/*                                 ISAP_RK                                    */
 /******************************************************************************/
 
 void isap_rk(
     const uint8_t *k,
     const uint8_t *iv,
     const uint8_t *y,
-    const size_t ylen,
     state_t *out,
-    const uint64_t outlen)
+    const size_t outlen)
 {
     state_t state;
     state_t *s = &state;
 
-    // Init state
-    s->x[0] = U64BIG(*(uint64_t *)(k + 0));
-    s->x[1] = U64BIG(*(uint64_t *)(k + 8));
-    s->x[2] = U64BIG(*(uint64_t *)(iv));
+    // Initialize
+    s->l[0] = U64TOWORD(*(lane_t *)(k + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(k + 8));
+    s->l[2] = U64TOWORD(*(lane_t *)(iv + 0));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sK;
@@ -67,22 +68,22 @@ void isap_rk(
     // Absorb Y, bit by bit
     for (size_t i = 0; i < 16; i++)
     {
-        uint64_t cur_byte = *y;
-        s->x[0] ^= (cur_byte & 0x80) << 56;
+        uint8_t y_byte = *y;
+        s->b[0][7] ^= (y_byte & 0x80) << 0;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x40) << 57;
+        s->b[0][7] ^= (y_byte & 0x40) << 1;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x20) << 58;
+        s->b[0][7] ^= (y_byte & 0x20) << 2;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x10) << 59;
+        s->b[0][7] ^= (y_byte & 0x10) << 3;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x08) << 60;
+        s->b[0][7] ^= (y_byte & 0x08) << 4;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x04) << 61;
+        s->b[0][7] ^= (y_byte & 0x04) << 5;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x02) << 62;
+        s->b[0][7] ^= (y_byte & 0x02) << 6;
         P_sB;
-        s->x[0] ^= (cur_byte & 0x01) << 63;
+        s->b[0][7] ^= (y_byte & 0x01) << 7;
         if (i != 15)
         {
             P_sB;
@@ -90,59 +91,62 @@ void isap_rk(
         }
     }
 
-    // Extract K*
+    // Squeeze K*
     P_sK;
     out->x[0] = s->x[0];
     out->x[1] = s->x[1];
-    if (outlen == 24)
+    if (outlen > 16)
     {
         out->x[2] = s->x[2];
     }
 }
 
 /******************************************************************************/
-/*                                  IsapMac                                   */
+/*                                 ISAP_MAC                                   */
 /******************************************************************************/
 
 void isap_mac(
     const uint8_t *k,
     const uint8_t *npub,
-    const uint8_t *ad, const uint64_t adlen,
-    const uint8_t *c, const uint64_t clen,
+    const uint8_t *ad, uint64_t adlen,
+    const uint8_t *c, uint64_t clen,
     uint8_t *tag)
 {
     state_t state;
     state_t *s = &state;
 
-    s->x[0] = U64BIG(*(uint64_t *)(npub + 0));
-    s->x[1] = U64BIG(*(uint64_t *)(npub + 8));
-    s->x[2] = U64BIG(*(uint64_t *)(ISAP_IV_A));
+    // Initialize
+    s->l[0] = U64TOWORD(*(lane_t *)(npub + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(npub + 8));
+    s->l[2] = U64TOWORD(*(lane_t *)(ISAP_IV_A + 0));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sH;
 
-    // Absorb AD
+    // Absorb associated data
     ABSORB_LANES(s, ad, adlen);
 
     // Domain seperation
-    s->x[4] ^= 0x1ULL;
+    s->w[4][0] ^= 0x1UL;
 
-    // Absorb C
+    // Absorb ciphertext
     ABSORB_LANES(s, c, clen);
 
     // Needed for LR tag comparison
     s0 = s->x[0];
     s1 = s->x[1];
 
-    // Derive K*
-    s->x[0] = U64BIG(s->x[0]);
-    s->x[1] = U64BIG(s->x[1]);
-    isap_rk(k, ISAP_IV_KA, (uint8_t *)(s->b), CRYPTO_KEYBYTES, s, CRYPTO_KEYBYTES);
+    // Derive KA*
+    s->l[0] = WORDTOU64(s->l[0]);
+    s->l[1] = WORDTOU64(s->l[1]);
+    isap_rk(k, ISAP_IV_KA, (const uint8_t *)(s->b), s, CRYPTO_KEYBYTES);
 
     // Squeeze tag
     P_sH;
-    *(uint64_t *)(tag + 0) = U64BIG(s->x[0]);
-    *(uint64_t *)(tag + 8) = U64BIG(s->x[1]);
+    lane_t t0 = WORDTOU64(s->l[0]);
+    memcpy(tag + 0, t0.b, 8);
+    t0 = WORDTOU64(s->l[1]);
+    memcpy(tag + 8, t0.b, 8);
 }
 
 /******************************************************************************/
@@ -157,8 +161,8 @@ int pvp(
     state_t *s = &state;
 
     // Calculate U
-    s->x[0] = U64BIG(*(uint64_t *)(T + 0));
-    s->x[1] = U64BIG(*(uint64_t *)(T + 8));
+    s->l[0] = U64TOWORD(*(lane_t *)(T + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(T + 8));
     s->x[2] = s0;
     s->x[3] = s1;
     s->x[4] = 0;
@@ -168,15 +172,15 @@ int pvp(
     u1 = s->x[1];
 
     // Calculate U'
-    s->x[0] = U64BIG(*(uint64_t *)(T_star + 0));
-    s->x[1] = U64BIG(*(uint64_t *)(T_star + 8));
+    s->l[0] = U64TOWORD(*(lane_t *)(T_star + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(T_star + 8));
     s->x[2] = s0;
     s->x[3] = s1;
     s->x[4] = 0;
     P_PVP;
 
     // Compare tag
-    unsigned long eq_cnt = 0;
+    int eq_cnt = 0;
     for (size_t i = 0; i < 8; i++)
     {
         eq_cnt += (s->b[0][i] == ((uint8_t *)&u0)[i]);
@@ -189,44 +193,45 @@ int pvp(
 }
 
 /******************************************************************************/
-/*                                  IsapEnc                                   */
+/*                                 ISAP_ENC                                   */
 /******************************************************************************/
 
 void isap_enc(
     const uint8_t *k,
     const uint8_t *npub,
-    const uint8_t *m,
-    uint64_t mlen,
+    const uint8_t *m, uint64_t mlen,
     uint8_t *c)
+
 {
     state_t state;
     state_t *s = &state;
-    isap_rk(k, ISAP_IV_KE, npub, CRYPTO_NPUBBYTES, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
 
     // Init state
-    s->x[3] = U64BIG(*(uint64_t *)(npub + 0));
-    s->x[4] = U64BIG(*(uint64_t *)(npub + 8));
+    isap_rk(k, ISAP_IV_KE, npub, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+    s->l[3] = U64TOWORD(*(lane_t *)(npub + 0));
+    s->l[4] = U64TOWORD(*(lane_t *)(npub + 8));
 
-    // Squeeze key stream
-    while (mlen >= ISAP_rH_SZ)
+    while (mlen >= ISAP_rH / 8)
     {
-        // Squeeze full lane
+        // Encrypt full lanes
         P_sE;
-        *(uint64_t *)c = U64BIG(s->x[0]) ^ *(uint64_t *)m;
-        mlen -= ISAP_rH_SZ;
-        m += 8;
-        c += 8;
+        lane_t t0 = WORDTOU64(s->l[0]);
+        *(uint64_t *)c = *(uint64_t *)m ^ t0.x;
+        mlen -= ISAP_rH / 8;
+        m += ISAP_rH / 8;
+        c += ISAP_rH / 8;
     }
 
     if (mlen > 0)
     {
-        // Squeeze partial lane
+        // Encrypt partial lanes
         P_sE;
-        for (size_t i = 0; i < mlen; i++)
+        lane_t t0 = WORDTOU64(s->l[0]);
+        for (uint8_t i = 0; i < mlen; i++)
         {
-            *c = s->b[0][7 - i] ^ *m;
-            c += 1;
+            *c = *m ^ t0.b[i];
             m += 1;
+            c += 1;
         }
     }
 }
@@ -237,28 +242,28 @@ void isap_enc(
 
 #if ENABLE_HASH == 1
 
-const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
-
-int crypto_hash(unsigned char *out, const unsigned char *in, unsigned long long inlen)
+int crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
 {
+
     state_t state;
     state_t *s = &state;
 
     // Initialize
-    s->x[0] = U64BIG(*(uint64_t *)ASCON_HASH_IV);
+    s->l[0] = U64TOWORD(*(lane_t *)(ASCON_HASH_IV + 0));
     s->x[1] = 0;
     s->x[2] = 0;
     s->x[3] = 0;
     s->x[4] = 0;
     P_sH;
 
+    // Absorb input
     ABSORB_LANES(s, in, inlen);
 
-    // Squeeze full lanes
     for (size_t i = 0; i < 4; i++)
     {
-        *(uint64_t *)out = U64BIG(s->x[0]);
-        out += 8;
+        // Squeeze full lanes
+        lane_t t0 = WORDTOU64(s->l[0]);
+        *(uint64_t *)(out + 8 * i) = t0.x;
         if (i < 3)
         {
             P_sH;

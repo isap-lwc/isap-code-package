@@ -31,12 +31,25 @@ typedef union
 #define U64TOWORD(x) interleave8(U64BIG(x))
 #define WORDTOU64(x) U64BIG(interleave8(x))
 
+/* ---------------------------------------------------------------- */
+
 #define TOBI(x) interleave8(x)
 #define FROMBI(x) interleave8(x)
 
 /* ---------------------------------------------------------------- */
 
 #define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
+
+/* ---------------------------------------------------------------- */
+
+lane_t U64BIG(lane_t x)
+{
+    x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
+           (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
+           (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
+           (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
+    return x;
+}
 
 /* ---------------------------------------------------------------- */
 
@@ -60,27 +73,15 @@ forceinline uint64_t ROR(uint64_t x, int n)
 
 /* ---------------------------------------------------------------- */
 
-lane_t U64BIG(lane_t x)
-{
-    lane_t t0;
-    t0.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
-            (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
-            (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
-            (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
-    return t0;
-}
-
-/* ---------------------------------------------------------------- */
-
 /* credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002 */
 forceinline lane_t interleave8(lane_t x)
 {
     x.x = (x.x & 0xaa55aa55aa55aa55ull) | ((x.x & 0x00aa00aa00aa00aaull) << 7) |
-        ((x.x >> 7) & 0x00aa00aa00aa00aaull);
+          ((x.x >> 7) & 0x00aa00aa00aa00aaull);
     x.x = (x.x & 0xcccc3333cccc3333ull) | ((x.x & 0x0000cccc0000ccccull) << 14) |
-        ((x.x >> 14) & 0x0000cccc0000ccccull);
+          ((x.x >> 14) & 0x0000cccc0000ccccull);
     x.x = (x.x & 0xf0f0f0f00f0f0f0full) | ((x.x & 0x00000000f0f0f0f0ull) << 28) |
-        ((x.x >> 28) & 0x00000000f0f0f0f0ull);
+          ((x.x >> 28) & 0x00000000f0f0f0f0ull);
     return x;
 }
 

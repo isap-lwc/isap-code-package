@@ -6,6 +6,14 @@
 
 typedef union
 {
+    uint64_t x;
+    uint32_t w[2];
+    uint8_t b[8];
+} lane_t;
+
+typedef union
+{
+    lane_t l[5];
     uint64_t x[5];
     uint32_t w[5][2];
     uint8_t b[5][8];
@@ -16,11 +24,21 @@ const int R[5][2] = {
 
 /* ---------------------------------------------------------------- */
 
-#define P_sH PXROUNDS(s, 12)
-#define P_sB PXROUNDS(s, 1)
-#define P_sE PXROUNDS(s, 6)
-#define P_sK PXROUNDS(s, 12)
-#define P_PVP PXROUNDS(s, 7)
+#define P_sH PROUNDS(s, 12)
+#define P_sB PROUNDS(s, 1)
+#define P_sE PROUNDS(s, 6)
+#define P_sK PROUNDS(s, 12)
+#define P_PVP PROUNDS(s, 7)
+
+/* ---------------------------------------------------------------- */
+
+#define U64TOWORD(x) U64BIG(x)
+#define WORDTOU64(x) U64BIG(x)
+
+/* ---------------------------------------------------------------- */
+
+#define TOBI(x) (x)
+#define FROMBI(x) (x)
 
 /* ---------------------------------------------------------------- */
 
@@ -28,12 +46,13 @@ const int R[5][2] = {
 
 /* ---------------------------------------------------------------- */
 
-uint64_t U64BIG(uint64_t x)
+forceinline lane_t U64BIG(lane_t x)
 {
-    return ((((x)&0x00000000000000FFULL) << 56) | (((x)&0x000000000000FF00ULL) << 40) |
-            (((x)&0x0000000000FF0000ULL) << 24) | (((x)&0x00000000FF000000ULL) << 8) |
-            (((x)&0x000000FF00000000ULL) >> 8) | (((x)&0x0000FF0000000000ULL) >> 24) |
-            (((x)&0x00FF000000000000ULL) >> 40) | (((x)&0xFF00000000000000ULL) >> 56));
+    x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
+           (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
+           (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
+           (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
+    return x;
 }
 
 /* ---------------------------------------------------------------- */
@@ -88,9 +107,9 @@ forceinline void ROUND(uint64_t C, state_t *s)
 
 /* ---------------------------------------------------------------- */
 
-void PXROUNDS(state_t *s, uint8_t x)
+void PROUNDS(state_t *s, uint8_t nr)
 {
-    switch (x)
+    switch (nr)
     {
     case 12:
         ROUND(0xf0, s);

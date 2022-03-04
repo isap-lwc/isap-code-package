@@ -1,5 +1,5 @@
-#ifndef ASCONP_H
-#define ASCONP_H
+#ifndef ASCONP_H_
+#define ASCONP_H_
 
 #include <inttypes.h>
 #include "forceinline.h"
@@ -21,10 +21,20 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-#define P_sH PXROUNDS(s, 12)
-#define P_sB PXROUNDS(s, 1)
-#define P_sE PXROUNDS(s, 6)
-#define P_sK PXROUNDS(s, 12)
+#define P_sH PROUNDS(s, 12)
+#define P_sB PROUNDS(s, 1)
+#define P_sE PROUNDS(s, 6)
+#define P_sK PROUNDS(s, 12)
+
+/* ---------------------------------------------------------------- */
+
+#define U64TOWORD(x) to_bit_interleaving(U64BIG(x))
+#define WORDTOU64(x) U64BIG(from_bit_interleaving(x))
+
+/* ---------------------------------------------------------------- */
+
+#define TOBI(x) to_bit_interleaving(x)
+#define FROMBI(x) from_bit_interleaving(x)
 
 /* ---------------------------------------------------------------- */
 
@@ -38,18 +48,17 @@ typedef union
 
 lane_t U64BIG(lane_t x)
 {
-    lane_t t0;
-    t0.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
-            (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
-            (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
-            (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
-    return t0;
+    x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
+           (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
+           (((x.x) & 0x000000FF00000000ULL) >> 8) | (((x.x) & 0x0000FF0000000000ULL) >> 24) |
+           (((x.x) & 0x00FF000000000000ULL) >> 40) | (((x.x) & 0xFF00000000000000ULL) >> 56));
+    return x;
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-void to_bit_interleaving(lane_t *out, lane_t in)
+lane_t to_bit_interleaving(lane_t in)
 {
     uint32_t lo = in.w[0];
     uint32_t hi = in.w[1];
@@ -62,14 +71,16 @@ void to_bit_interleaving(lane_t *out, lane_t in)
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 8)) & 0x0000FF00, hi ^= r1 ^ (r1 << 8);
-    out->w[0] = (lo & 0x0000FFFF) | (hi << 16);
-    out->w[1] = (lo >> 16) | (hi & 0xFFFF0000);
+    lane_t out;
+    out.w[0] = (lo & 0x0000FFFF) | (hi << 16);
+    out.w[1] = (lo >> 16) | (hi & 0xFFFF0000);
+    return out;
 }
 
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-void from_bit_interleaving(lane_t *out, lane_t in)
+lane_t from_bit_interleaving(lane_t in)
 {
     uint32_t lo = ((in).w[0] & 0x0000FFFF) | ((in).w[1] << 16);
     uint32_t hi = ((in).w[0] >> 16) | ((in).w[1] & 0xFFFF0000);
@@ -82,7 +93,9 @@ void from_bit_interleaving(lane_t *out, lane_t in)
     r1 = (hi ^ (hi >> 4)) & 0x00F000F0, hi ^= r1 ^ (r1 << 4);
     r1 = (hi ^ (hi >> 2)) & 0x0C0C0C0C, hi ^= r1 ^ (r1 << 2);
     r1 = (hi ^ (hi >> 1)) & 0x22222222, hi ^= r1 ^ (r1 << 1);
-    out->x = (uint64_t)hi << 32 | lo;
+    lane_t out;
+    out.x = (uint64_t)hi << 32 | lo;
+    return out;
 }
 
 /* ---------------------------------------------------------------- */
@@ -158,9 +171,9 @@ forceinline void ROUND(state_t *s, uint32_t ce, uint32_t co)
 
 /* ---------------------------------------------------------------- */
 
-void PXROUNDS(state_t *s, uint8_t x)
+void PROUNDS(state_t *s, uint8_t nr)
 {
-    switch (x)
+    switch (nr)
     {
     case 12:
         ROUND(s, 0xc, 0xc);
