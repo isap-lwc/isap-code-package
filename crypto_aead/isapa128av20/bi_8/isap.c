@@ -5,20 +5,13 @@
 #include "asconp.h"
 #include "config.h"
 
-// ISAP-A-128a
-const uint8_t ISAP_IV_A[] = {0x01, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const uint8_t ISAP_IV_KA[] = {0x02, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-const uint8_t ISAP_IV_KE[] = {0x03, ISAP_K, ISAP_rH, ISAP_rB, ISAP_sH, ISAP_sB, ISAP_sE, ISAP_sK};
-
 forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
 {
-    lane_t t0;
     while (len >= 8)
     {
         // Absorb full lanes
-        to_bit_interleaving(&t0, U64BIG(*(lane_t *)src));
-        s->w[0][0] ^= t0.w[0];
-        s->w[0][1] ^= t0.w[1];
+        lane_t t0 = U64TOWORD(*(lane_t *)(src + 0));
+        s->x[0] ^= t0.x;
         len -= ISAP_rH / 8;
         src += ISAP_rH / 8;
         P_sH;
@@ -26,23 +19,22 @@ forceinline void ABSORB_LANES(state_t *s, const uint8_t *src, uint64_t len)
 
     if (len > 0)
     {
-        // Absorb partial lanes
+        // Absorb partial lane and padding
         size_t i;
-        lane_t t1 = {0};
+        lane_t t0 = {0};
         for (i = 0; i < len; i++)
         {
-            t1.b[7 - i] ^= *src;
+            t0.b[7 - i] ^= *src;
             src++;
         }
-        t1.b[7 - i] ^= 0x80;
-        to_bit_interleaving(&t1, t1);
-        s->w[0][0] ^= t1.w[0];
-        s->w[0][1] ^= t1.w[1];
+        t0.b[7 - i] ^= 0x80;
+        t0 = TOBI(t0);
+        s->x[0] ^= t0.x;
         P_sH;
     }
     else
     {
-        // Absorb empty lane (padding)
+        // Absorb padded empty lane
         s->b[0][7] ^= 0x80;
         P_sH;
     }
@@ -62,10 +54,10 @@ void isap_rk(
     state_t state;
     state_t *s = &state;
 
-    // Init state
-    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(k + 0)));
-    to_bit_interleaving(s->l + 1, U64BIG(*(lane_t *)(k + 8)));
-    to_bit_interleaving(s->l + 2, U64BIG(*(lane_t *)(iv + 0)));
+    // Initialize
+    s->l[0] = U64TOWORD(*(lane_t *)(k + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(k + 8));
+    s->l[2] = U64TOWORD(*(lane_t *)(iv + 0));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sK;
@@ -73,22 +65,22 @@ void isap_rk(
     // Absorb Y, bit by bit
     for (size_t i = 0; i < 16; i++)
     {
-        uint32_t cur_byte = *y;
-        s->w[0][1] ^= (cur_byte & 0x80) << 24;
+        uint8_t y_byte = *y;
+        s->b[0][7] ^= (y_byte & 0x80) << 0;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x40) << 25;
+        s->b[0][7] ^= (y_byte & 0x40) << 1;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x20) << 26;
+        s->b[0][7] ^= (y_byte & 0x20) << 2;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x10) << 27;
+        s->b[0][7] ^= (y_byte & 0x10) << 3;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x08) << 28;
+        s->b[0][7] ^= (y_byte & 0x08) << 4;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x04) << 29;
+        s->b[0][7] ^= (y_byte & 0x04) << 5;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x02) << 30;
+        s->b[0][7] ^= (y_byte & 0x02) << 6;
         P_sB;
-        s->w[0][1] ^= (cur_byte & 0x01) << 31;
+        s->b[0][7] ^= (y_byte & 0x01) << 7;
         if (i != 15)
         {
             P_sB;
@@ -117,39 +109,36 @@ void isap_mac(
     const uint8_t *c, uint64_t clen,
     uint8_t *tag)
 {
-    lane_t t0;
     state_t state;
     state_t *s = &state;
 
     // Initialize
-    to_bit_interleaving(s->l + 0, U64BIG(*(lane_t *)(npub + 0)));
-    to_bit_interleaving(s->l + 1, U64BIG(*(lane_t *)(npub + 8)));
-    to_bit_interleaving(s->l + 2, U64BIG(*(lane_t *)(ISAP_IV_A + 0)));
+    s->l[0] = U64TOWORD(*(lane_t *)(npub + 0));
+    s->l[1] = U64TOWORD(*(lane_t *)(npub + 8));
+    s->l[2] = U64TOWORD(*(lane_t *)(ISAP_IV_A + 0));
     s->x[3] = 0;
     s->x[4] = 0;
     P_sH;
 
+    // Absorb AD
     ABSORB_LANES(s, ad, adlen);
 
     // Domain seperation
     s->w[4][0] ^= 0x1UL;
 
+    // Absorb C
     ABSORB_LANES(s, c, clen);
 
     // Derive KA*
-    from_bit_interleaving(&t0, s->l[0]);
-    s->l[0] = U64BIG(t0);
-    from_bit_interleaving(&t0, s->l[1]);
-    s->l[1] = U64BIG(t0);
+    s->l[0] = WORDTOU64(s->l[0]);
+    s->l[1] = WORDTOU64(s->l[1]);
     isap_rk(k, ISAP_IV_KA, (const uint8_t *)(s->b), s, CRYPTO_KEYBYTES);
 
-    // Create tag
+    // Squeeze tag
     P_sH;
-    from_bit_interleaving(&t0, s->l[0]);
-    t0 = U64BIG(t0);
+    lane_t t0 = WORDTOU64(s->l[0]);
     memcpy(tag + 0, t0.b, 8);
-    from_bit_interleaving(&t0, s->l[1]);
-    t0 = U64BIG(t0);
+    t0 = WORDTOU64(s->l[1]);
     memcpy(tag + 8, t0.b, 8);
 }
 
@@ -169,16 +158,15 @@ void isap_enc(
 
     // Init state
     isap_rk(k, ISAP_IV_KE, npub, s, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
-    to_bit_interleaving(s->l + 3, U64BIG(*(lane_t *)(npub + 0)));
-    to_bit_interleaving(s->l + 4, U64BIG(*(lane_t *)(npub + 8)));
+    s->l[3] = U64TOWORD(*(lane_t *)(npub + 0));
+    s->l[4] = U64TOWORD(*(lane_t *)(npub + 8));
 
-    lane_t t0;
     while (mlen >= ISAP_rH / 8)
     {
         // Squeeze full lanes
         P_sE;
-        from_bit_interleaving(&t0, s->l[0]);
-        *(uint64_t *)c = *(uint64_t *)m ^ U64BIG(t0).x;
+        lane_t t0 = WORDTOU64(s->l[0]);
+        *(uint64_t *)c = *(uint64_t *)m ^ t0.x;
         mlen -= ISAP_rH / 8;
         m += ISAP_rH / 8;
         c += ISAP_rH / 8;
@@ -188,12 +176,10 @@ void isap_enc(
     {
         // Squeeze partial lane
         P_sE;
-        from_bit_interleaving(&t0, s->l[0]);
-        t0 = U64BIG(t0);
-        uint8_t *tmp0_bytes = (uint8_t *)&t0;
+        lane_t t0 = WORDTOU64(s->l[0]);
         for (uint8_t i = 0; i < mlen; i++)
         {
-            *c = *m ^ tmp0_bytes[i];
+            *c = *m ^ t0.b[i];
             m += 1;
             c += 1;
         }
@@ -205,8 +191,6 @@ void isap_enc(
 /******************************************************************************/
 
 #if ENABLE_HASH == 1
-
-const uint8_t ASCON_HASH_IV[] = {0x00, 0x40, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00};
 
 int crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
 {
@@ -235,7 +219,7 @@ int crypto_hash(uint8_t *out, const uint8_t *in, unsigned long long inlen)
             P_sH;
         }
     }
-    
+
     return 0;
 }
 

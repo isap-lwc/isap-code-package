@@ -28,6 +28,14 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
+#define U64TOWORD(x) interleave8(U64BIG(x))
+#define WORDTOU64(x) U64BIG(interleave8(x))
+
+#define TOBI(x) interleave8(x)
+#define FROMBI(x) interleave8(x)
+
+/* ---------------------------------------------------------------- */
+
 #define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
 
 /* ---------------------------------------------------------------- */
@@ -65,14 +73,14 @@ lane_t U64BIG(lane_t x)
 /* ---------------------------------------------------------------- */
 
 /* credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002 */
-forceinline uint64_t interleave8(uint64_t x)
+forceinline lane_t interleave8(lane_t x)
 {
-    x = (x & 0xaa55aa55aa55aa55ull) | ((x & 0x00aa00aa00aa00aaull) << 7) |
-        ((x >> 7) & 0x00aa00aa00aa00aaull);
-    x = (x & 0xcccc3333cccc3333ull) | ((x & 0x0000cccc0000ccccull) << 14) |
-        ((x >> 14) & 0x0000cccc0000ccccull);
-    x = (x & 0xf0f0f0f00f0f0f0full) | ((x & 0x00000000f0f0f0f0ull) << 28) |
-        ((x >> 28) & 0x00000000f0f0f0f0ull);
+    x.x = (x.x & 0xaa55aa55aa55aa55ull) | ((x.x & 0x00aa00aa00aa00aaull) << 7) |
+        ((x.x >> 7) & 0x00aa00aa00aa00aaull);
+    x.x = (x.x & 0xcccc3333cccc3333ull) | ((x.x & 0x0000cccc0000ccccull) << 14) |
+        ((x.x >> 14) & 0x0000cccc0000ccccull);
+    x.x = (x.x & 0xf0f0f0f00f0f0f0full) | ((x.x & 0x00000000f0f0f0f0ull) << 28) |
+        ((x.x >> 28) & 0x00000000f0f0f0f0ull);
     return x;
 }
 
@@ -81,7 +89,7 @@ forceinline uint64_t interleave8(uint64_t x)
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
 void to_bit_interleaving(lane_t *out, lane_t in)
 {
-    out->x = interleave8(in.x);
+    *out = interleave8(in);
 }
 
 /* ---------------------------------------------------------------- */
@@ -89,7 +97,7 @@ void to_bit_interleaving(lane_t *out, lane_t in)
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
 void from_bit_interleaving(lane_t *out, lane_t in)
 {
-    out->x = interleave8(in.x);
+    *out = interleave8(in);
 }
 
 /* ---------------------------------------------------------------- */
