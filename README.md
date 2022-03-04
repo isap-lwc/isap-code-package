@@ -18,14 +18,18 @@ and the following implementations:
 - `opt_64_compact`: More compact variant of `opt_64`.
   - On processors without rotation instruction, or processors with word sizes smaller than 32 bit, this variant might perform better than the `bi_32*` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
+- `opt_32`: Optimized 32-bit implementation in C.
+- `opt_32_compact`: More compact variant of `opt_32`.
+- `opt_32_stp`: Variant of `opt_32_compact` that includes a leakage-resilient tag comparison.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
-    - 32-bit bit-interleaved implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
+    - Should perform better than `opt_32` on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
 - `bi_32_compact`: More compact variant of `bi_32`.
 - `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
 - `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
 - `opt_8`: Optimized 8-bit implementation in C.
-- `bi_8`: Variant of `opt_8` that should perform better if a rotation instruction is available.
+- `bi_8`: Bit-interleaved 8-bit implementation in C.
+    - Should perform better than `opt_8` on 8-bit processors that feature a rotation instruction.
 - `ref`: Easy-to-read implementation in C (not suitable for benchmarks).
 
 Performance on different platforms (cycles/byte):
@@ -46,9 +50,9 @@ For more and up-to-date benchmark results click [here](https://isap.iaik.tugraz.
 Run KATs:
 ---------
 
-Compile and test all implementations:
+Compile and test all implementations for ISAP-A-128a (primary recommendation):
 1. `cd tests`
-2. `bash test_all.sh` (ARM assembly variants are excluded by default)
+2. `bash test_all.sh` *(ARM assembly variants are excluded by default)*
 
 Compile and test a specific implementation:
 1. Use one of the compile commands provided below (adjust as needed)
@@ -81,9 +85,9 @@ gcc -march=native -O3 -DNDEBUG -Icrypto_aead_hash/isapa128av20/bi_32_armv6 crypt
 Run Benchmarks:
 ---------------
 
-Compile and benchmark all implementations:
+Compile and benchmark all implementations for ISAP-A-128a (primary recommendation):
 1. `cd tests`
-2. `bash bench_all.sh` (ARM assembly variants are excluded by default)
+2. `bash bench_all.sh` *(ARM assembly variants are excluded by default)*
 
 Compile and benchmark a specific implementation:
 1. Use one of the compile commands provided below (adjust as needed)
