@@ -19,6 +19,7 @@ and the following implementations:
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
 - `opt_32`: Optimized 32-bit implementation in C.
 - `opt_32_compact`: More compact variant of `opt_32`.
+- `opt_32_tiny`: Much more compact variant of `opt_32`.
 - `opt_32_stp`: Variant of `opt_32_compact` that includes a leakage-resilient tag comparison.
 - `bi_32`: Bit-interleaved 32-bit implementation in C.
     - Should perform better than `opt_32` on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
@@ -28,6 +29,7 @@ and the following implementations:
 - `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
 - `bi_32_armv6_stp`: Variant of `bi_32_armv6_compact` that includes a leakage-resilient tag comparison.
 - `opt_8`: Optimized 8-bit implementation in C.
+- `opt_8_tiny`: More compact variant of `opt_8`.
 - `bi_8`: Bit-interleaved 8-bit implementation in C.
     - Should perform better than `opt_8` on 8-bit processors that feature a rotation instruction.
 - `ref`: Easy-to-read implementation in C (not suitable for benchmarks).
