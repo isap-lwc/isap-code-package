@@ -38,16 +38,6 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-#define XMUL(i, x)                                   \
-    do                                               \
-    {                                                \
-        tmp = (uint16_t)a.b[i] * (1 << (x));         \
-        b.b[(byte_rol + (i)) & 0x7] ^= (uint8_t)tmp; \
-        b.b[(byte_rol + (i) + 1) & 0x7] ^= tmp >> 8; \
-    } while (0)
-
-/* ---------------------------------------------------------------- */
-
 lane_t U64BIG(lane_t x)
 {
     x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
@@ -58,6 +48,14 @@ lane_t U64BIG(lane_t x)
 }
 
 /* ---------------------------------------------------------------- */
+
+#define XMUL(i, x)                                   \
+    do                                               \
+    {                                                \
+        tmp = (uint16_t)a.b[i] * (1 << (x));         \
+        b.b[(byte_rol + (i)) & 0x7] ^= (uint8_t)tmp; \
+        b.b[(byte_rol + (i) + 1) & 0x7] ^= tmp >> 8; \
+    } while (0)
 
 forceinline uint64_t ROR(uint64_t x, int n)
 {
