@@ -39,10 +39,6 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-#define ROTR(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
-
-/* ---------------------------------------------------------------- */
-
 lane_t U64BIG(lane_t x)
 {
     x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
@@ -98,7 +94,7 @@ void PROUNDS(state_t *s, uint8_t nr)
         ROUND(s, 0xd2);
         ROUND(s, 0xc3);
         ROUND(s, 0xb4);
-	case 7:
+    case 7:
         ROUND(s, 0xa5);
     case 6:
         ROUND(s, 0x96);
