@@ -21,10 +21,11 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-#define P_sH P12ROUNDS(s)
-#define P_sB P1ROUNDS(s)
-#define P_sE P6ROUNDS(s)
-#define P_sK P12ROUNDS(s)
+#define P_sH PROUNDS(s, 12)
+#define P_sB PROUNDS(s, 1)
+#define P_sE PROUNDS(s, 6)
+#define P_sK PROUNDS(s, 12)
+#define P_PVP PROUNDS(s, 7)
 
 /* ---------------------------------------------------------------- */
 
@@ -38,7 +39,7 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-forceinline lane_t U64BIG(lane_t x)
+lane_t U64BIG(lane_t x)
 {
     x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
            (((x.x) & 0x0000000000FF0000ULL) << 24) | (((x.x) & 0x00000000FF000000ULL) << 8) |
@@ -50,7 +51,7 @@ forceinline lane_t U64BIG(lane_t x)
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline lane_t to_bit_interleaving(lane_t in)
+lane_t to_bit_interleaving(lane_t in)
 {
     uint32_t lo = in.w[0];
     uint32_t hi = in.w[1];
@@ -72,7 +73,7 @@ forceinline lane_t to_bit_interleaving(lane_t in)
 /* ---------------------------------------------------------------- */
 
 // Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-forceinline lane_t from_bit_interleaving(lane_t in)
+lane_t from_bit_interleaving(lane_t in)
 {
     uint32_t lo = ((in).w[0] & 0x0000FFFF) | ((in).w[1] << 16);
     uint32_t hi = ((in).w[0] >> 16) | ((in).w[1] & 0xFFFF0000);
@@ -245,41 +246,30 @@ forceinline void ROUND(state_t *s, uint64_t C)
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P12ROUNDS(state_t *s)
+void PROUNDS(state_t *s, uint8_t nr)
 {
-    ROUND(s, 0xc0000000c);
-    ROUND(s, 0xc00000009);
-    ROUND(s, 0x90000000c);
-    ROUND(s, 0x900000009);
-    ROUND(s, 0xc00000006);
-    ROUND(s, 0xc00000003);
-    ROUND(s, 0x900000006);
-    ROUND(s, 0x900000003);
-    ROUND(s, 0x60000000c);
-    ROUND(s, 0x600000009);
-    ROUND(s, 0x30000000c);
-    ROUND(s, 0x300000009);
+    switch (nr)
+    {
+    case 12:
+        ROUND(s, 0xc0000000c);
+        ROUND(s, 0xc00000009);
+        ROUND(s, 0x90000000c);
+        ROUND(s, 0x900000009);
+        ROUND(s, 0xc00000006);
+    case 7:
+        ROUND(s, 0xc00000003);
+    case 6:
+        ROUND(s, 0x900000006);
+        ROUND(s, 0x900000003);
+        ROUND(s, 0x60000000c);
+        ROUND(s, 0x600000009);
+        ROUND(s, 0x30000000c);
+    default:
+        ROUND(s, 0x300000009);
+        ;
+    }
 }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void P6ROUNDS(state_t *s)
-{
-    ROUND(s, 0x900000006);
-    ROUND(s, 0x900000003);
-    ROUND(s, 0x60000000c);
-    ROUND(s, 0x600000009);
-    ROUND(s, 0x30000000c);
-    ROUND(s, 0x300000009);
-}
-
-/* ---------------------------------------------------------------- */
-
-forceinline void P1ROUNDS(state_t *s)
-{
-    ROUND(s, 0x300000009);
-}
-
-/* ---------------------------------------------------------------- */
-
-#endif // ASCONP_H_
+#endif // ASCONP_H

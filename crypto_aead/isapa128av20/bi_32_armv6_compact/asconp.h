@@ -38,14 +38,6 @@ typedef union
 
 /* ---------------------------------------------------------------- */
 
-#define RC(i) ((uint64_t)constants[i + 1] << 32 | constants[i])
-
-/* ---------------------------------------------------------------- */
-
-#define ROTR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
-
-/* ---------------------------------------------------------------- */
-
 lane_t U64BIG(lane_t x)
 {
     x.x = ((((x.x) & 0x00000000000000FFULL) << 56) | (((x.x) & 0x000000000000FF00ULL) << 40) |
@@ -100,73 +92,155 @@ lane_t from_bit_interleaving(lane_t in)
 
 /* ---------------------------------------------------------------- */
 
-forceinline void ROUND(state_t *s, uint32_t ce, uint32_t co)
+forceinline void ROUND(state_t *s, uint64_t C)
 {
-    uint32_t reg0, reg1, reg2, reg3;
-    s->w[2][0] ^= ce;
-    s->w[2][1] ^= co;
+    uint32_t tmp0, tmp1, tmp2;
     __asm__ __volatile__(
+        "@.syntax_unified\n\t"
+        "movs %[tmp1], %[C_e]\n\t"
+        "eor %[x2_e], %[x2_e], %[tmp1]\n\t"
         "eor %[x0_e], %[x0_e], %[x4_e]\n\t"
-        "eor %[x0_o], %[x0_o], %[x4_o]\n\t"
         "eor %[x4_e], %[x4_e], %[x3_e]\n\t"
-        "eor %[x4_o], %[x4_o], %[x3_o]\n\t"
         "eor %[x2_e], %[x2_e], %[x1_e]\n\t"
-        "eor %[x2_o], %[x2_o], %[x1_o]\n\t"
-        "bic %[reg0], %[x0_e], %[x4_e]\n\t"
-        "bic %[reg1], %[x4_e], %[x3_e]\n\t"
-        "bic %[reg2], %[x2_e], %[x1_e]\n\t"
-        "bic %[reg3], %[x1_e], %[x0_e]\n\t"
-        "eor %[x2_e], %[x2_e], %[reg1]\n\t"
-        "eor %[x0_e], %[x0_e], %[reg2]\n\t"
-        "eor %[x4_e], %[x4_e], %[reg3]\n\t"
-        "bic %[reg3], %[x3_e], %[x2_e]\n\t"
-        "eor %[x3_e], %[x3_e], %[reg0]\n\t"
-        "bic %[reg2], %[x0_o], %[x4_o]\n\t"
-        "bic %[reg0], %[x2_o], %[x1_o]\n\t"
-        "bic %[reg1], %[x4_o], %[x3_o]\n\t"
-        "eor %[x1_e], %[x1_e], %[reg3]\n\t"
-        "eor %[x0_o], %[x0_o], %[reg0]\n\t"
-        "eor %[x2_o], %[x2_o], %[reg1]\n\t"
-        "bic %[reg3], %[x1_o], %[x0_o]\n\t"
-        "bic %[reg0], %[x3_o], %[x2_o]\n\t"
-        "eor %[x3_o], %[x3_o], %[reg2]\n\t"
-        "eor %[x3_o], %[x3_o], %[x2_o]\n\t"
-        "eor %[x4_o], %[x4_o], %[reg3]\n\t"
-        "eor %[x1_o], %[x1_o], %[reg0]\n\t"
-        "eor %[x3_e], %[x3_e], %[x2_e]\n\t"
-        "eor %[x1_e], %[x1_e], %[x0_e]\n\t"
-        "eor %[x1_o], %[x1_o], %[x0_o]\n\t"
-        "eor %[x0_e], %[x0_e], %[x4_e]\n\t"
-        "eor %[x0_o], %[x0_o], %[x4_o]\n\t"
-        "mvn %[x2_e], %[x2_e]\n\t"
-        "mvn %[x2_o], %[x2_o]\n\t"
-        "eor %[reg0], %[x0_e], %[x0_o], ror #4\n\t"
-        "eor %[reg1], %[x0_o], %[x0_e], ror #5\n\t"
-        "eor %[reg2], %[x1_e], %[x1_e], ror #11\n\t"
-        "eor %[reg3], %[x1_o], %[x1_o], ror #11\n\t"
-        "eor %[x0_e], %[x0_e], %[reg1], ror #9\n\t"
-        "eor %[x0_o], %[x0_o], %[reg0], ror #10\n\t"
-        "eor %[x1_e], %[x1_e], %[reg3], ror #19\n\t"
-        "eor %[x1_o], %[x1_o], %[reg2], ror #20\n\t"
-        "eor %[reg0], %[x2_e], %[x2_o], ror #2\n\t"
-        "eor %[reg1], %[x2_o], %[x2_e], ror #3\n\t"
-        "eor %[reg2], %[x3_e], %[x3_o], ror #3\n\t"
-        "eor %[reg3], %[x3_o], %[x3_e], ror #4\n\t"
-        "eor %[x2_e], %[x2_e], %[reg1]\n\t"
-        "eor %[x2_o], %[x2_o], %[reg0], ror #1\n\t"
-        "eor %[x3_e], %[x3_e], %[reg2], ror #5\n\t"
-        "eor %[x3_o], %[x3_o], %[reg3], ror #5\n\t"
-        "eor %[reg0], %[x4_e], %[x4_e], ror #17\n\t"
-        "eor %[reg1], %[x4_o], %[x4_o], ror #17\n\t"
-        "eor %[x4_e], %[x4_e], %[reg1], ror #3\n\t"
-        "eor %[x4_o], %[x4_o], %[reg0], ror #4\n\t"
-        : [x0_e] "+r"(s->w[0][0]), [x1_e] "+r"(s->w[1][0]),
-          [x2_e] "+r"(s->w[2][0]), [x3_e] "+r"(s->w[3][0]),
-          [x4_e] "+r"(s->w[4][0]), [x0_o] "+r"(s->w[0][1]),
+        "movs %[tmp0], %[x0_e]\n\t"
+        "bic %[tmp0], %[tmp0], %[x4_e]\n\t"
+        "movs %[tmp1], %[x2_e]\n\t"
+        "bic %[tmp1], %[tmp1], %[x1_e]\n\t"
+        "eor %[x0_e], %[x0_e], %[tmp1]\n\t"
+        "movs %[tmp1], %[x4_e]\n\t"
+        "bic %[tmp1], %[tmp1], %[x3_e]\n\t"
+        "eor %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "movs %[tmp2], %[x1_e]\n\t"
+        "bic %[tmp2], %[tmp2], %[x0_e]\n\t"
+        "eor %[tmp2], %[x4_e], %[tmp2]\n\t"
+        "movs %[tmp1], %[x3_e]\n\t"
+        "bic %[tmp1], %[tmp1], %[x2_e]\n\t"
+        "eor %[tmp1], %[x1_e], %[tmp1]\n\t"
+        "eor %[tmp0], %[x3_e], %[tmp0]\n\t"
+        "eor %[tmp0], %[tmp0], %[x2_e]\n\t"
+        "eor %[tmp1], %[tmp1], %[x0_e]\n\t"
+        "eor %[x0_e], %[x0_e], %[tmp2]\n\t"
+        "movs %[x4_e], %[x4_o]\n\t"
+        "movs %[x1_e], %[x1_o]\n\t"
+        "movs %[x3_e], %[x3_o]\n\t"
+        "movs %[x3_o], %[tmp0]\n\t"
+        "movs %[x1_o], %[tmp1]\n\t"
+        "movs %[tmp0], %[x0_o]\n\t"
+        "movs %[tmp1], %[x2_o]\n\t"
+        "movs %[x0_o], %[x0_e]\n\t"
+        "movs %[x2_o], %[x2_e]\n\t"
+        "movs %[x0_e], %[C_o]\n\t"
+        "eor %[tmp1], %[tmp1], %[x0_e]\n\t"
+        "eor %[tmp0], %[tmp0], %[x4_e]\n\t"
+        "eor %[x4_e], %[x4_e], %[x3_e]\n\t"
+        "eor %[tmp1], %[tmp1], %[x1_e]\n\t"
+        "movs %[x0_e], %[tmp0] \n\t"
+        "bic %[x0_e], %[x0_e], %[x4_e]\n\t"
+        "movs %[x2_e], %[tmp1] \n\t"
+        "bic %[x2_e], %[x2_e], %[x1_e]\n\t"
+        "eor %[tmp0], %[tmp0], %[x2_e]\n\t"
+        "movs %[x2_e], %[x4_e] \n\t"
+        "bic %[x2_e], %[x2_e], %[x3_e]\n\t"
+        "eor %[tmp1], %[tmp1], %[x2_e]\n\t"
+        "movs %[x2_e], %[x1_e]\n\t"
+        "bic %[x2_e], %[x2_e], %[tmp0]\n\t"
+        "eor %[x4_e], %[x4_e], %[x2_e]\n\t"
+        "movs %[x2_e], %[x3_e] \n\t"
+        "bic %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "eor %[x1_e], %[x1_e], %[x2_e]\n\t"
+        "eor %[x3_e], %[x3_e], %[x0_e]\n\t"
+        "eor %[x3_e], %[x3_e], %[tmp1]\n\t"
+        "eor %[x1_e], %[x1_e], %[tmp0]\n\t"
+        "eor %[tmp0], %[tmp0], %[x4_e]\n\t"
+        "movs %[x4_o], %[tmp1]\n\t"
+        "movs %[x2_e], %[x3_o]\n\t"
+        "movs %[x3_o], %[x1_e]\n\t"
+        "movs %[tmp1], #17\n\t"
+        "movs %[x0_e], %[tmp2]\n\t"
+        "ror %[x0_e], %[x0_e], %[tmp1]\n\t"
+        "eor %[x0_e], %[tmp2], %[x0_e]\n\t"
+        "movs %[x1_e], %[x4_e]\n\t"
+        "ror %[x1_e], %[x1_e], %[tmp1]\n\t"
+        "eor %[x1_e], %[x4_e], %[x1_e]\n\t"
+        "movs %[tmp1], #3\n\t"
+        "ror %[x1_e], %[x1_e], %[tmp1]\n\t"
+        "eor %[tmp2], %[tmp2], %[x1_e]\n\t"
+        "movs %[tmp1], #4\n\t"
+        "ror %[x0_e], %[x0_e], %[tmp1]\n\t"
+        "eor %[x4_e], %[x4_e], %[x0_e]\n\t"
+        "movs %[x1_e], %[x2_e]\n\t"
+        "ror %[x1_e], %[x1_e], %[tmp1]\n\t"
+        "eor %[x1_e], %[x3_e], %[x1_e]\n\t"
+        "movs %[tmp1], #3\n\t"
+        "movs %[x0_e], %[x3_e]\n\t"
+        "ror %[x0_e], %[x0_e], %[tmp1]\n\t"
+        "eor %[x0_e], %[x2_e], %[x0_e]\n\t"
+        "movs %[tmp1], #5\n\t"
+        "ror %[x0_e], %[x0_e], %[tmp1]\n\t"
+        "eor %[x2_e], %[x2_e], %[x0_e]\n\t"
+        "ror %[x1_e], %[x1_e], %[tmp1]\n\t"
+        "eor %[x3_e], %[x3_e], %[x1_e]\n\t"
+        "movs %[x0_e], %[x0_o]\n\t"
+        "movs %[x1_e], %[x1_o]\n\t"
+        "movs %[x1_o], %[x2_e]\n\t"
+        "movs %[x0_o], %[tmp2]\n\t"
+        "movs %[tmp2], %[x4_o]\n\t"
+        "movs %[x4_o], %[x4_e]\n\t"
+        "movs %[x4_e], %[x3_o]\n\t"
+        "movs %[x3_o], %[x3_e]\n\t"
+        "movs %[x3_e], %[x0_e]\n\t"
+        "ror %[x3_e], %[x3_e], %[tmp1]\n\t"
+        "eor %[x3_e], %[tmp0], %[x3_e]\n\t"
+        "movs %[tmp1], #4\n\t"
+        "movs %[x2_e], %[tmp0]\n\t"
+        "ror %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "eor %[x2_e], %[x0_e], %[x2_e]\n\t"
+        "movs %[tmp1], #9\n\t"
+        "ror %[x3_e], %[x3_e], %[tmp1]\n\t"
+        "eor %[x0_e], %[x0_e], %[x3_e]\n\t"
+        "movs %[tmp1], #10\n\t"
+        "ror %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "eor %[tmp0], %[tmp0], %[x2_e]\n\t"
+        "movs %[tmp1], #11\n\t"
+        "movs %[x2_e], %[x1_e]\n\t"
+        "ror %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "eor %[x2_e], %[x1_e], %[x2_e]\n\t"
+        "movs %[x3_e], %[x4_e]\n\t"
+        "ror %[x3_e], %[x3_e], %[tmp1]\n\t"
+        "eor %[x3_e], %[x4_e], %[x3_e]\n\t"
+        "movs %[tmp1], #19\n\t"
+        "ror %[x3_e], %[x3_e], %[tmp1]\n\t"
+        "eor %[x1_e], %[x1_e], %[x3_e]\n\t"
+        "movs %[tmp1], #20\n\t"
+        "ror %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "eor %[x4_e], %[x4_e], %[x2_e]\n\t"
+        "movs %[x2_e], %[x2_o]\n\t"
+        "movs %[x3_e], %[x1_o]\n\t"
+        "movs %[x1_o], %[x4_e]\n\t"
+        "movs %[x2_o], %[tmp0]\n\t"
+        "movs %[x4_e], #2\n\t"
+        "mvn %[tmp0], %[tmp2]\n\t"
+        "ror %[tmp0], %[tmp0], %[x4_e]\n\t"
+        "eor %[tmp0], %[x2_e], %[tmp0]\n\t"
+        "movs %[x4_e], #3\n\t"
+        "mvn %[tmp1], %[x2_e]\n\t"
+        "ror %[tmp1], %[tmp1], %[x4_e]\n\t"
+        "eor %[tmp1], %[tmp2], %[tmp1]\n\t"
+        "eor %[x2_e], %[x2_e], %[tmp1]\n\t"
+        "movs %[x4_e], #1\n\t"
+        "ror %[tmp0], %[tmp0], %[x4_e]\n\t"
+        "eor %[tmp2], %[tmp2], %[tmp0]\n\t"
+        "movs %[x4_e], %[x0_o]\n\t"
+        "movs %[x0_o], %[x2_o]\n\t"
+        "movs %[x2_o], %[tmp2]\n\t"
+        : [x0_e] "+l"(s->w[0][0]), [x1_e] "+l"(s->w[1][0]),
+          [x2_e] "+l"(s->w[2][0]), [x3_e] "+l"(s->w[3][0]),
+          [x4_e] "+l"(s->w[4][0]), [x0_o] "+r"(s->w[0][1]),
           [x1_o] "+r"(s->w[1][1]), [x2_o] "+r"(s->w[2][1]),
           [x3_o] "+r"(s->w[3][1]), [x4_o] "+r"(s->w[4][1]),
-          [reg0] "=r"(reg0), [reg1] "=r"(reg1),
-          [reg2] "=r"(reg2), [reg3] "=r"(reg3)::);
+          [tmp0] "=l"(tmp0), [tmp1] "=l"(tmp1), [tmp2] "=l"(tmp2)
+        : [C_e] "ri"((uint32_t)C), [C_o] "ri"((uint32_t)(C >> 32))
+        :);
 }
 
 /* ---------------------------------------------------------------- */
@@ -176,20 +250,20 @@ void PROUNDS(state_t *s, uint8_t nr)
     switch (nr)
     {
     case 12:
-        ROUND(s, 0xc, 0xc);
-        ROUND(s, 0x9, 0xc);
-        ROUND(s, 0xc, 0x9);
-        ROUND(s, 0x9, 0x9);
-        ROUND(s, 0x6, 0xc);
-        ROUND(s, 0x3, 0xc);
+        ROUND(s, 0xc0000000c);
+        ROUND(s, 0xc00000009);
+        ROUND(s, 0x90000000c);
+        ROUND(s, 0x900000009);
+        ROUND(s, 0xc00000006);
+        ROUND(s, 0xc00000003);
     case 6:
-        ROUND(s, 0x6, 0x9);
-        ROUND(s, 0x3, 0x9);
-        ROUND(s, 0xc, 0x6);
-        ROUND(s, 0x9, 0x6);
-        ROUND(s, 0xc, 0x3);
+        ROUND(s, 0x900000006);
+        ROUND(s, 0x900000003);
+        ROUND(s, 0x60000000c);
+        ROUND(s, 0x600000009);
+        ROUND(s, 0x30000000c);
     default:
-        ROUND(s, 0x9, 0x3);
+        ROUND(s, 0x300000009);
         ;
     }
 }

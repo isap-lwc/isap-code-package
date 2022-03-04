@@ -158,6 +158,8 @@ forceinline void P12ROUNDS(state_t *s)
     ROUND(s, 0x300000009);
 }
 
+/* ---------------------------------------------------------------- */
+
 forceinline void P6ROUNDS(state_t *s)
 {
     ROUND(s, 0x900000006);
@@ -167,6 +169,8 @@ forceinline void P6ROUNDS(state_t *s)
     ROUND(s, 0x30000000c);
     ROUND(s, 0x300000009);
 }
+
+/* ---------------------------------------------------------------- */
 
 forceinline void P1ROUNDS(state_t *s)
 {
