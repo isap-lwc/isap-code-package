@@ -87,22 +87,6 @@ forceinline lane_t interleave8(lane_t x)
 
 /* ---------------------------------------------------------------- */
 
-// Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-void to_bit_interleaving(lane_t *out, lane_t in)
-{
-    *out = interleave8(in);
-}
-
-/* ---------------------------------------------------------------- */
-
-// Credit to Henry S. Warren, Hacker's Delight, Addison-Wesley, 2002
-void from_bit_interleaving(lane_t *out, lane_t in)
-{
-    *out = interleave8(in);
-}
-
-/* ---------------------------------------------------------------- */
-
 forceinline void ROUND(state_t *s, uint64_t C)
 {
     uint64_t xtemp;

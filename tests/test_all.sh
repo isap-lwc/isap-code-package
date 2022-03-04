@@ -19,6 +19,7 @@ declare -a arr=(
 #"crypto_aead/isapa128av20/bi_32_armv6"			    # works only on arm devices
 #"crypto_aead/isapa128av20/bi_32_armv6_compact"     # works only on arm devices
 "crypto_aead/isapa128av20/bi_8"
+"crypto_aead/isapa128av20/opt_8"
 "crypto_aead/isapa128av20/ref"
 )
 for i in "${arr[@]}"
@@ -47,6 +48,7 @@ declare -a arr=(
 #"crypto_aead_hash/isapa128av20/bi_32_armv6"	        # works only on arm devices
 #"crypto_aead_hash/isapa128av20/bi_32_armv6_compact"    # works only on arm devices
 "crypto_aead_hash/isapa128av20/bi_8"
+"crypto_aead_hash/isapa128av20/opt_8"
 )
 for i in "${arr[@]}"
 do

@@ -14,16 +14,18 @@ This repository contains implementations of the following algorithms:
 and the following implementations:
 
 - `avx_512`: AVX-512 implementation in C.
-- `bi_32`: Bit-interleaved 32-bit implementation in C.
-    - 32-bit bit-interleaved implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
-- `bi_32_compact`: More compact variant of `bi_32`.
-- `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
-- `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
-- `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `opt_64`: Optimized 64-bit implementation in C.
 - `opt_64_compact`: More compact variant of `opt_64`.
   - On processors without rotation instruction, or processors with word sizes smaller than 32 bit, this variant might perform better than the `bi_32*` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
+- `bi_32`: Bit-interleaved 32-bit implementation in C.
+    - 32-bit bit-interleaved implementations should perform well on 32-bit processors that feature a rotation instruction such as the ARM Cortex-M3/4 or the Raspberry Pi.
+- `bi_32_compact`: More compact variant of `bi_32`.
+- `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
+- `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
+- `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
+- `opt_8`: Optimized 8-bit implementation in C.
+- `bi_8`: Variant of `opt_8` that should perform better if a rotation instruction is available.
 - `ref`: Easy-to-read implementation in C (not suitable for benchmarks).
 
 Performance on different platforms (cycles/byte):
