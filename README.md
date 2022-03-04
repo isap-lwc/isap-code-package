@@ -16,7 +16,6 @@ and the following implementations:
 - `avx_512`: AVX-512 implementation in C.
 - `opt_64`: Optimized 64-bit implementation in C.
 - `opt_64_compact`: More compact variant of `opt_64`.
-  - On processors without rotation instruction, or processors with word sizes smaller than 32 bit, this variant might perform better than the `bi_32*` implementations.
 - `opt_64_stp`: Variant of `opt_64_compact` that includes a leakage-resilient tag comparison.
 - `opt_32`: Optimized 32-bit implementation in C.
 - `opt_32_compact`: More compact variant of `opt_32`.
@@ -27,6 +26,7 @@ and the following implementations:
 - `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
 - `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
+- `bi_32_armv6_stp`: Variant of `bi_32_armv6_compact` that includes a leakage-resilient tag comparison.
 - `opt_8`: Optimized 8-bit implementation in C.
 - `bi_8`: Bit-interleaved 8-bit implementation in C.
     - Should perform better than `opt_8` on 8-bit processors that feature a rotation instruction.
