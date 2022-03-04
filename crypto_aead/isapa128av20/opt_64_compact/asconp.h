@@ -19,9 +19,6 @@ typedef union
     uint8_t b[5][8];
 } state_t;
 
-const int R[5][2] = {
-    {19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
-
 /* ---------------------------------------------------------------- */
 
 #define P_sH PROUNDS(s, 12)
@@ -56,7 +53,7 @@ forceinline uint64_t ROR(uint64_t x, int n) { return x >> n | x << (-n & 63); }
 
 /* ---------------------------------------------------------------- */
 
-forceinline void ROUND(state_t *s,uint8_t C)
+forceinline void ROUND(state_t *s, uint8_t C)
 {
     uint64_t xtemp;
     /* round constant */
@@ -95,20 +92,20 @@ void PROUNDS(state_t *s, uint8_t nr)
     switch (nr)
     {
     case 12:
-        ROUND(s,0xf0);
-        ROUND(s,0xe1);
-        ROUND(s,0xd2);
-        ROUND(s,0xc3);
-        ROUND(s,0xb4);
-        ROUND(s,0xa5);
+        ROUND(s, 0xf0);
+        ROUND(s, 0xe1);
+        ROUND(s, 0xd2);
+        ROUND(s, 0xc3);
+        ROUND(s, 0xb4);
+        ROUND(s, 0xa5);
     case 6:
-        ROUND(s,0x96);
-        ROUND(s,0x87);
-        ROUND(s,0x78);
-        ROUND(s,0x69);
-        ROUND(s,0x5a);
+        ROUND(s, 0x96);
+        ROUND(s, 0x87);
+        ROUND(s, 0x78);
+        ROUND(s, 0x69);
+        ROUND(s, 0x5a);
     default:
-        ROUND(s,0x4b);
+        ROUND(s, 0x4b);
     }
 }
 
