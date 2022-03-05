@@ -26,8 +26,10 @@ and the following implementations:
 - `bi_32_compact`: More compact variant of `bi_32`.
 - `bi_32_stp`: Variant of `bi_32_compact` that includes a leakage-resilient tag comparison.
 - `bi_32_armv6`: Bit-interleaved 32-bit implementation using ARMv6 assembly.
-- `bi_32_armv6_compact`: More compact variant of `bi_32_armv6`.
-- `bi_32_armv6_stp`: Variant of `bi_32_armv6_compact` that includes a leakage-resilient tag comparison.
+- `bi_32_armv6m`: Bit-interleaved 32-bit implementation using ARMv6m assembly.
+- `bi_32_armv6m_compact`: More compact variant of `bi_32_armv6m`.
+- `bi_32_armv6m_stp`: Variant of `bi_32_armv6m_compact` that includes a leakage-resilient tag comparison.
+- `bi_32_armv7m`: Bit-interleaved 32-bit implementation using ARMv7m assembly.
 - `opt_8`: Optimized 8-bit implementation in C.
 - `opt_8_tiny`: More compact variant of `opt_8`.
 - `bi_8`: Bit-interleaved 8-bit implementation in C.
