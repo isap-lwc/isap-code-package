@@ -94,17 +94,16 @@ forceinline lane_t from_bit_interleaving(lane_t in)
 
 forceinline void ROUND(state_t *s, uint64_t C)
 {
-    uint32_t tmp0, tmp1, tmp2;
     // Based on the round description of Ascon given in the Bachelor's
     // thesis: "Optimizing Ascon on RISC-V" of Lars Jellema
     // see https://github.com/Lucus16/ascon-riscv/
+    uint32_t tmp0, tmp1, tmp2;
     __asm__ __volatile__(
         "eor %[x2_e], %[x2_e], %[C_e]\n\t"
         "eor %[tmp0], %[x1_e], %[x2_e]\n\t"
         "eor %[tmp1], %[x0_e], %[x4_e]\n\t"
         "eor %[tmp2], %[x3_e], %[x4_e]\n\t"
-        "mvn %[x4_e], %[x4_e]\n\t"
-        "orr %[x4_e], %[x3_e], %[x4_e]\n\t"
+        "orn %[x4_e], %[x3_e], %[x4_e]\n\t"
         "eor %[x4_e], %[x4_e], %[tmp0]\n\t"
         "eor %[x3_e], %[x3_e], %[x1_e]\n\t"
         "orr %[x3_e], %[x3_e], %[tmp0]\n\t"
@@ -120,8 +119,7 @@ forceinline void ROUND(state_t *s, uint64_t C)
         "eor %[tmp0], %[x1_o], %[x2_o]\n\t"
         "eor %[tmp1], %[x0_o], %[x4_o]\n\t"
         "eor %[tmp2], %[x3_o], %[x4_o]\n\t"
-        "mvn %[x4_o], %[x4_o]\n\t"
-        "orr %[x4_o], %[x3_o], %[x4_o]\n\t"
+        "orn %[x4_o], %[x3_o], %[x4_o]\n\t"
         "eor %[x4_o], %[x4_o], %[tmp0]\n\t"
         "eor %[x3_o], %[x3_o], %[x1_o]\n\t"
         "orr %[x3_o], %[x3_o], %[tmp0]\n\t"
