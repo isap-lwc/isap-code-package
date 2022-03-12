@@ -45,10 +45,10 @@ Performance on different platforms (cycles/byte):
 |:---------------------------|------:|------:|------:|
 | AMD  EPYC 7742 (x64) ¹     |     - |     - |  18.9 |
 | AMD Ryzen 7 1700 (x64)     |  85.7 |  24.5 |  21.9 |
-| ARM Cortex-A53 (ARMv8) ¹ | 	   - | 	   - |	41.5 |
+| ARM Cortex-A53 (ARMv8) ¹   | 	   - | 	   - |	38.3 |
 | Raspberry Pi 1B (ARMv6)    |   551 |   171 |   159 |
 | STM32F303 (ARMv7m)         |   542 |   168 |   150 |
-| ATmega328P (AVR) ² 	     |   450 | 	  -  |    -  |
+| ATmega328P (AVR) ² 	     |   450 | 	   - |     - |
 
 ¹ Taken from [eBACS](https://bench.cr.yp.to/results-nistlwc-aead.html).
 
