@@ -51,6 +51,7 @@ Performance on different platforms (cycles/byte):
 | ATmega328P (AVR) ² 	     |   450 | 	  -  |    -  |
 
 ¹ Taken from [eBACS](https://bench.cr.yp.to/results-nistlwc-aead.html).
+
 ² Taken from [NIST LWC benchmarks](https://github.com/usnistgov/Lightweight-Cryptography-Benchmarking). 
 
 For up-to-date benchmark results click [here](https://isap.iaik.tugraz.at/implementations.html).
