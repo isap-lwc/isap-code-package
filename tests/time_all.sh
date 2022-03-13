@@ -31,7 +31,7 @@ declare -a arr=(
 for i in "${arr[@]}"
 do
 	echo "$i"
-	gcc -march=native -O3 -DNDEBUG -I$i $i/*.c -DCRYPTO_AEAD -Itests tests/gettime.c -o gettime
-	res=$( { time ./gettime; } 2>&1 )
+	gcc -march=native -O3 -DNDEBUG -I$i $i/*.c -DCRYPTO_AEAD -Itests tests/bulk.c -o bulk
+	res=$( { time ./bulk; } 2>&1 )
 	echo $res | rev | cut -d " " -f 3 | rev
 done
