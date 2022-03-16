@@ -36,6 +36,8 @@ and the following implementations:
     - Should perform better than `opt_8` on 8-bit processors that feature a rotation instruction.
 - `ref`: Easy-to-read implementation in C (not suitable for benchmarks).
 
+A summary of the robustness features of the ISAP mode against implementation attacks can be found in `docs/documentation.pdf`.
+
 Performance on different platforms (cycles/byte):
 -------------------------------------------------
 
